@@ -1,0 +1,14 @@
+# Supabase CLI project configuration (local development).
+project_id = "bsa-project-compass"
+
+[api]
+schemas = ["public"]
+
+[auth]
+# Configure the organization-approved identity provider (e.g. Microsoft Entra ID
+# via the "azure" provider, or SAML SSO) in the Supabase dashboard. Disable
+# open email sign-up for production deployments.
+enable_signup = false
+
+[functions.api]
+verify_jwt = true

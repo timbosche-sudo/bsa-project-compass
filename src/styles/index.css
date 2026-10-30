@@ -1,0 +1,206 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * BSA Project Compass design tokens.
+ * Replace values here (not in components) when official BSA design-system
+ * files are provided. Components reference semantic names only.
+ */
+:root {
+  --c-canvas: #f5f5f3;
+  --c-surface: #ffffff;
+  --c-raised: #ffffff;
+  --c-sunken: #eeeeeb;
+  --c-ink: #0b0d0f;
+  --c-ink-2: #2f343a;
+  --c-muted: #62686f;
+  --c-faint: #8d9298;
+  --c-line: #e2e2de;
+  --c-line-strong: #c8c8c3;
+  --c-accent: #0b8fa1;
+  --c-accent-strong: #08707e;
+  --c-accent-soft: #e2f4f6;
+  --c-on-accent: #ffffff;
+  --c-inverse: #0b0d0f;
+  --c-on-inverse: #f5f5f3;
+
+  --c-ok: #1d7a50;
+  --c-ok-soft: #e3f3ea;
+  --c-warn: #9a6200;
+  --c-warn-soft: #fbf0d9;
+  --c-risk: #b83a14;
+  --c-risk-soft: #fbe6de;
+  --c-danger: #b3261e;
+  --c-danger-soft: #fae3e1;
+  --c-info: #2a5bd7;
+  --c-info-soft: #e5ecfb;
+  --c-ai: #6b46c1;
+  --c-ai-soft: #efe9fb;
+  --c-neutral-soft: #ececea;
+
+  --shadow-card: 0 1px 0 rgb(11 13 15 / 0.04), 0 1px 2px rgb(11 13 15 / 0.04);
+  --shadow-pop: 0 12px 40px -8px rgb(11 13 15 / 0.22), 0 2px 6px rgb(11 13 15 / 0.08);
+  color-scheme: light;
+}
+
+.dark {
+  --c-canvas: #0a0c0d;
+  --c-surface: #121517;
+  --c-raised: #171b1e;
+  --c-sunken: #0e1012;
+  --c-ink: #f1f2f2;
+  --c-ink-2: #cdd1d4;
+  --c-muted: #9aa1a7;
+  --c-faint: #6f767c;
+  --c-line: #23282c;
+  --c-line-strong: #343a3f;
+  --c-accent: #2cc4d6;
+  --c-accent-strong: #5fd6e4;
+  --c-accent-soft: #0f2a2e;
+  --c-on-accent: #04191c;
+  --c-inverse: #f1f2f2;
+  --c-on-inverse: #0b0d0f;
+
+  --c-ok: #4cc28a;
+  --c-ok-soft: #10261b;
+  --c-warn: #e2ac45;
+  --c-warn-soft: #2a2010;
+  --c-risk: #f0875f;
+  --c-risk-soft: #2d1710;
+  --c-danger: #f27b72;
+  --c-danger-soft: #2e1413;
+  --c-info: #86a7ff;
+  --c-info-soft: #141d33;
+  --c-ai: #b69cff;
+  --c-ai-soft: #1f1833;
+  --c-neutral-soft: #1d2124;
+
+  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-pop: 0 16px 48px -8px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-raised: var(--c-raised);
+  --color-sunken: var(--c-sunken);
+  --color-ink: var(--c-ink);
+  --color-ink-2: var(--c-ink-2);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-accent: var(--c-accent);
+  --color-accent-strong: var(--c-accent-strong);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-on-accent: var(--c-on-accent);
+  --color-inverse: var(--c-inverse);
+  --color-on-inverse: var(--c-on-inverse);
+  --color-ok: var(--c-ok);
+  --color-ok-soft: var(--c-ok-soft);
+  --color-warn: var(--c-warn);
+  --color-warn-soft: var(--c-warn-soft);
+  --color-risk: var(--c-risk);
+  --color-risk-soft: var(--c-risk-soft);
+  --color-danger: var(--c-danger);
+  --color-danger-soft: var(--c-danger-soft);
+  --color-info: var(--c-info);
+  --color-info-soft: var(--c-info-soft);
+  --color-ai: var(--c-ai);
+  --color-ai-soft: var(--c-ai-soft);
+  --color-neutral-soft: var(--c-neutral-soft);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  body {
+    @apply bg-canvas text-ink font-sans;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  /* Grid children may shrink below their content width (prevents phone overflow). */
+  .grid > * {
+    min-width: 0;
+  }
+  ::selection {
+    background: var(--c-accent-soft);
+  }
+  h1, h2, h3, h4 {
+    letter-spacing: -0.015em;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-muted;
+  }
+  .display {
+    @apply text-[30px] leading-[1.1] font-semibold tracking-[-0.03em] text-ink;
+  }
+  .code-tag {
+    @apply font-mono text-[11px] font-medium tracking-tight text-muted;
+  }
+  .input {
+    @apply w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-[14px] text-ink placeholder:text-faint transition-colors;
+    @apply focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25;
+    @apply disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .table-base {
+    @apply w-full border-separate border-spacing-0 text-left text-[13px];
+  }
+  .table-base th {
+    @apply sticky top-0 z-[1] border-b border-line bg-surface px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
+  }
+  .table-base td {
+    @apply border-b border-line px-3 py-2.5 align-top;
+  }
+  .table-base tbody tr:hover td {
+    @apply bg-sunken/60;
+  }
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-line-strong) transparent;
+  }
+}
+
+/* React Flow theming */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: var(--c-line-strong);
+  --xy-edge-stroke-selected: var(--c-accent);
+  --xy-controls-button-background-color: var(--c-surface);
+  --xy-controls-button-background-color-hover: var(--c-sunken);
+  --xy-controls-button-color: var(--c-ink);
+  --xy-controls-button-border-color: var(--c-line);
+  --xy-minimap-background-color: var(--c-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  .no-print { display: none !important; }
+}

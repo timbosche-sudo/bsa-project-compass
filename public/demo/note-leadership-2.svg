@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="'Segoe Print','Bradley Hand','Comic Sans MS',cursive">
+<rect width="800" height="600" fill="#e4e0d6"/>
+<rect x="0" y="0" width="800" height="600" fill="url(#g)" opacity="0.25"/>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient></defs>
+<g transform="rotate(-1 400 156)"><rect x="64" y="96" width="672" height="120" fill="#80deea" stroke="#00000022"/><text x="82" y="148" font-size="30" fill="#1b2a6b">Be a good neighbor — jobs +</text><text x="82" y="188" font-size="30" fill="#1b2a6b">training for the community</text></g> <g transform="rotate(1.5 304 360)"><rect x="64" y="300" width="480" height="120" fill="#ffab91" stroke="#00000022"/><text x="82" y="352" font-size="30" fill="#1b2a6b">Every dose,</text><text x="82" y="392" font-size="30" fill="#1b2a6b">every patient</text></g>
+<text x="400" y="585" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#555" letter-spacing="2">SYNTHETIC DEMO IMAGE — NOT A REAL WORKSHOP NOTE</text>
+</svg>

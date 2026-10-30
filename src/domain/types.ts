@@ -1,0 +1,568 @@
+/**
+ * BSA Project Compass — core domain model.
+ *
+ * These types are shared by the browser demo adapter and the server-side
+ * command handler, so they must stay free of DOM or framework imports.
+ * Project-specific vocabulary lives in `Project.terminology`, never here.
+ */
+
+export type ID = string
+export type ISODate = string
+
+// ---------------------------------------------------------------------------
+// Organizations, people, roles
+// ---------------------------------------------------------------------------
+
+export const ROLES = [
+  'system_admin',
+  'org_admin',
+  'project_admin',
+  'editor',
+  'contributor',
+  'reviewer',
+  'viewer',
+] as const
+export type Role = (typeof ROLES)[number]
+
+export interface Person {
+  id: ID
+  name: string
+  title: string
+  organization: string
+  email: string
+}
+
+export interface Membership {
+  personId: ID
+  role: Role
+}
+
+// ---------------------------------------------------------------------------
+// Project
+// ---------------------------------------------------------------------------
+
+export const SECTORS = ['healing', 'learning', 'discovery', 'other'] as const
+export type Sector = (typeof SECTORS)[number]
+
+export const PHASES = [
+  'strategy',
+  'programming',
+  'schematic_design',
+  'design_development',
+  'construction_documents',
+  'construction',
+  'commissioning',
+  'occupancy',
+] as const
+export type Phase = (typeof PHASES)[number]
+
+export interface Terminology {
+  winTheme: string
+  guidingPrinciple: string
+  designDriver: string
+  decision: string
+}
+
+export interface Project {
+  id: ID
+  code: string
+  name: string
+  tagline: string
+  sector: Sector
+  phase: Phase
+  location: string
+  description: string
+  owner: { name: string; type: string; mission: string }
+  terminology: Terminology
+  /** Synthetic demonstration data. Exports and UI must label it. */
+  isDemo: boolean
+  createdAt: ISODate
+  members: Membership[]
+  aiPolicy: AiPolicy
+}
+
+export interface AiPolicy {
+  enabled: boolean
+  /** Confidentiality classifications permitted to be sent to the approved provider. */
+  allowedClassifications: Confidentiality[]
+}
+
+// ---------------------------------------------------------------------------
+// Source intelligence
+// ---------------------------------------------------------------------------
+
+export const SOURCE_TYPES = [
+  'workshop_notes',
+  'photograph',
+  'pdf',
+  'presentation',
+  'document',
+  'owner_rfp',
+  'meeting_summary',
+  'mission_statement',
+  'industry_research',
+  'regulation',
+  'approved_decision',
+  'observation',
+] as const
+export type SourceType = (typeof SOURCE_TYPES)[number]
+
+export const CONFIDENTIALITY = ['public', 'internal', 'confidential', 'restricted'] as const
+export type Confidentiality = (typeof CONFIDENTIALITY)[number]
+
+export const EXTRACTION_STATUSES = ['not_started', 'in_progress', 'extracted', 'verified'] as const
+export type ExtractionStatus = (typeof EXTRACTION_STATUSES)[number]
+
+export const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'image/heic',
+  'text/plain',
+] as const
+export type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number]
+
+export interface FileReference {
+  name: string
+  mimeType: AllowedMimeType
+  sizeBytes: number
+  /** Path in private storage. Null in demo mode: file contents are never stored. */
+  storagePath: string | null
+  /** Synthetic illustration bundled with the demo (never real project files). */
+  demoAsset?: string
+}
+
+export interface Source {
+  id: ID
+  code: string
+  title: string
+  type: SourceType
+  author: string
+  organization: string
+  date: ISODate
+  confidentiality: Confidentiality
+  uploadedBy: ID
+  uploadedAt: ISODate
+  file: FileReference | null
+  version: number
+  extractionStatus: ExtractionStatus
+  description: string
+  /** Possible duplicate capture of the same original (e.g. two photos of one note). */
+  possibleDuplicateOf: ID | null
+}
+
+export const STATEMENT_KINDS = ['aspiration', 'requirement', 'nonnegotiable', 'observation', 'question'] as const
+export type StatementKind = (typeof STATEMENT_KINDS)[number]
+
+export const CONFIDENCE = ['high', 'medium', 'low'] as const
+export type Confidence = (typeof CONFIDENCE)[number]
+
+export const TRANSCRIPTION_STATUSES = ['not_applicable', 'unverified', 'uncertain', 'verified'] as const
+export type TranscriptionStatus = (typeof TRANSCRIPTION_STATUSES)[number]
+
+export const CRITICALITY = ['normal', 'high', 'critical'] as const
+export type Criticality = (typeof CRITICALITY)[number]
+
+export interface Locator {
+  kind: 'page' | 'slide' | 'photo' | 'section' | 'none'
+  value: string
+  /** Optional normalized position within the page/photo (0–1). */
+  region?: { x: number; y: number; w: number; h: number }
+}
+
+export interface TranscriptionRevision {
+  text: string
+  by: ID
+  at: ISODate
+  note: string
+}
+
+export interface Statement {
+  id: ID
+  code: string
+  sourceId: ID
+  /** Verbatim wording. Changed only through an attributed transcription correction. */
+  originalText: string
+  locator: Locator
+  speaker: string
+  kind: StatementKind
+  criticality: Criticality
+  confidence: Confidence
+  transcriptionStatus: TranscriptionStatus
+  uncertainWords: string[]
+  reviewedBy: ID | null
+  reviewedAt: ISODate | null
+  /** Interpretation is kept separate from the original wording. */
+  interpretation: string
+  interpretationOrigin: 'human' | 'ai' | null
+  revisions: TranscriptionRevision[]
+  createdBy: ID
+  createdAt: ISODate
+}
+
+// ---------------------------------------------------------------------------
+// Evidence relationships (many-to-many traceability graph)
+// ---------------------------------------------------------------------------
+
+export const NODE_TYPES = ['source', 'statement', 'theme', 'winTheme', 'principle', 'driver', 'decision'] as const
+export type NodeType = (typeof NODE_TYPES)[number]
+
+export interface NodeRef {
+  type: NodeType
+  id: ID
+}
+
+export const RELATIONSHIP_TYPES = ['supports', 'informs', 'implements', 'addresses', 'conflicts_with', 'measures'] as const
+export type RelationshipType = (typeof RELATIONSHIP_TYPES)[number]
+
+export const REVIEW_STATUSES = ['proposed', 'accepted', 'rejected'] as const
+export type ReviewStatus = (typeof REVIEW_STATUSES)[number]
+
+export type Origin = 'human' | 'ai' | 'rules'
+
+export interface Relationship {
+  id: ID
+  from: NodeRef
+  to: NodeRef
+  type: RelationshipType
+  explanation: string
+  confidence: Confidence
+  origin: Origin
+  proposedBy: ID
+  reviewedBy: ID | null
+  status: ReviewStatus
+  createdAt: ISODate
+  updatedAt: ISODate
+}
+
+// ---------------------------------------------------------------------------
+// Alignment: themes and open questions
+// ---------------------------------------------------------------------------
+
+export const THEME_STATUSES = ['emerging', 'candidate', 'promoted', 'archived'] as const
+export type ThemeStatus = (typeof THEME_STATUSES)[number]
+
+export interface Theme {
+  id: ID
+  code: string
+  title: string
+  summary: string
+  status: ThemeStatus
+  /** Explicit, human-set importance. Frequency of mention never sets this. */
+  criticality: Criticality
+  conflictNote: string
+  promotedToPrincipleId: ID | null
+  createdBy: ID
+  createdAt: ISODate
+}
+
+export interface OpenQuestion {
+  id: ID
+  code: string
+  question: string
+  context: NodeRef[]
+  status: 'open' | 'answered' | 'withdrawn'
+  answer: string
+  raisedBy: ID
+  raisedAt: ISODate
+}
+
+// ---------------------------------------------------------------------------
+// Vision: Win Themes and Guiding Principles (versioned, approvable)
+// ---------------------------------------------------------------------------
+
+export const APPROVAL_STATUSES = ['proposed', 'in_review', 'approved', 'superseded'] as const
+export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number]
+
+export interface VersionEntry<T, S extends string = ApprovalStatus> {
+  version: number
+  snapshot: T
+  status: S
+  changedBy: ID
+  changedAt: ISODate
+  note: string
+}
+
+export interface Comment {
+  id: ID
+  target: NodeRef
+  authorId: ID
+  body: string
+  createdAt: ISODate
+  resolved: boolean
+}
+
+export interface ApprovalRecord {
+  approvedBy: ID
+  approvedAt: ISODate
+  version: number
+  note: string
+}
+
+export interface WinThemeContent {
+  statement: string
+  narrative: string
+}
+
+export interface WinTheme extends WinThemeContent {
+  id: ID
+  code: string
+  status: ApprovalStatus
+  version: number
+  versions: VersionEntry<WinThemeContent>[]
+  approval: ApprovalRecord | null
+  createdBy: ID
+}
+
+export const PRINCIPLE_CATEGORIES = ['facility_outcomes', 'delivery_excellence', 'institutional_impact', 'cross_cutting'] as const
+export type PrincipleCategory = (typeof PRINCIPLE_CATEGORIES)[number]
+
+export interface PrincipleContent {
+  title: string
+  statement: string
+  intent: string
+  category: PrincipleCategory
+}
+
+export interface GuidingPrinciple extends PrincipleContent {
+  id: ID
+  code: string
+  order: number
+  status: ApprovalStatus
+  version: number
+  versions: VersionEntry<PrincipleContent>[]
+  approval: ApprovalRecord | null
+  accountableApproverId: ID | null
+  createdBy: ID
+}
+
+// ---------------------------------------------------------------------------
+// Design Drivers
+// ---------------------------------------------------------------------------
+
+export const DRIVER_APPROVAL = ['proposed', 'under_review', 'approved', 'superseded'] as const
+export type DriverApproval = (typeof DRIVER_APPROVAL)[number]
+
+export const DRIVER_PERFORMANCE = ['not_started', 'in_progress', 'at_risk', 'verified', 'not_achieved'] as const
+export type DriverPerformance = (typeof DRIVER_PERFORMANCE)[number]
+
+/** Combined workflow status presented to users. */
+export const DRIVER_STATUSES = [
+  'proposed',
+  'under_review',
+  'approved',
+  'in_progress',
+  'at_risk',
+  'verified',
+  'not_achieved',
+  'superseded',
+] as const
+export type DriverStatus = (typeof DRIVER_STATUSES)[number]
+
+export const REQUIREMENT_CLASSES = ['owner_mandatory', 'owner_preference', 'regulatory', 'team_proposed'] as const
+export type RequirementClass = (typeof REQUIREMENT_CLASSES)[number]
+
+export const TARGET_STATUSES = ['not_set', 'proposed', 'approved'] as const
+export type TargetStatus = (typeof TARGET_STATUSES)[number]
+
+export interface DriverMeasure {
+  kind: 'quantitative' | 'qualitative'
+  unit: string
+  methodology: string
+  /** Null means unknown — never substitute a guessed number. */
+  baseline: string | null
+  target: string | null
+  targetStatus: TargetStatus
+  /** Qualitative acceptance criteria (Conditions of Satisfaction). */
+  acceptanceCriteria: string
+  current: string | null
+  currentAsOf: ISODate | null
+}
+
+export interface Verification {
+  evidence: string
+  reviewerId: ID
+  verifiedAt: ISODate
+  outcome: 'achieved' | 'not_achieved'
+}
+
+export interface DriverContent {
+  title: string
+  description: string
+  intendedOutcome: string
+  scope: 'facility' | 'delivery'
+  requirementClass: RequirementClass
+  /** Owner's original terminology, preserved verbatim where applicable. */
+  ownerTerm: string
+  measure: DriverMeasure
+  ownerPersonId: ID | null
+  ownerOrganization: string
+  phase: Phase
+  targetDate: ISODate | null
+  validationMethod: string
+  risks: string[]
+  dependencyIds: ID[]
+}
+
+export interface DesignDriver extends DriverContent {
+  id: ID
+  code: string
+  approvalStatus: DriverApproval
+  performanceStatus: DriverPerformance
+  verification: Verification | null
+  version: number
+  versions: VersionEntry<DriverContent, DriverApproval>[]
+  approval: ApprovalRecord | null
+  createdBy: ID
+}
+
+// ---------------------------------------------------------------------------
+// Decision Lab (Choosing by Advantages)
+// ---------------------------------------------------------------------------
+
+export const DECISION_STATUSES = ['framing', 'evaluating', 'recommended', 'approved', 'deferred'] as const
+export type DecisionStatus = (typeof DECISION_STATUSES)[number]
+
+export interface Alternative {
+  id: ID
+  name: string
+  description: string
+  /** Monetary cost is held apart from advantage importance. Null = unknown. */
+  cost: number | null
+  costBasis: string
+  scheduleImpact: string
+  risks: string
+}
+
+export type MustResult = 'pass' | 'fail' | 'unknown'
+
+export interface MandatoryRequirement {
+  id: ID
+  text: string
+  results: Record<ID, MustResult>
+}
+
+export interface Advantage {
+  /** Factual description of the advantage relative to the least-preferred attribute. */
+  description: string
+  /** Importance on the decision's scale (0–100); null until the team judges it. */
+  importance: number | null
+}
+
+export interface Factor {
+  id: ID
+  name: string
+  /** "Criterion": what is preferred, e.g. "Shorter walking distance is better". */
+  criterion: string
+  driverId: ID | null
+  attributes: Record<ID, string>
+  leastPreferredAltId: ID | null
+  advantages: Record<ID, Advantage>
+  importanceRationale: string
+}
+
+export interface DecisionEvent {
+  at: ISODate
+  by: ID
+  action: string
+  note: string
+}
+
+export interface Decision {
+  id: ID
+  code: string
+  question: string
+  context: string
+  status: DecisionStatus
+  phase: Phase
+  dueDate: ISODate | null
+  alternatives: Alternative[]
+  mandatoryRequirements: MandatoryRequirement[]
+  factors: Factor[]
+  /** Factor whose advantage was judged paramount (anchors the importance scale at 100). */
+  paramountFactorId: ID | null
+  recommendation: { alternativeId: ID; rationale: string; by: ID; at: ISODate } | null
+  approval: { alternativeId: ID; by: ID; at: ISODate; note: string } | null
+  /** Informal discussion scores — never presented as Choosing by Advantages. */
+  informalScores: Record<ID, Record<ID, number>>
+  history: DecisionEvent[]
+  createdBy: ID
+}
+
+// ---------------------------------------------------------------------------
+// Milestones, suggestions, audit
+// ---------------------------------------------------------------------------
+
+export interface Milestone {
+  id: ID
+  name: string
+  date: ISODate
+  phase: Phase
+  driverIds: ID[]
+  complete: boolean
+}
+
+export const SUGGESTION_KINDS = ['relationship', 'theme', 'question', 'principle_wording', 'driver_measure', 'missing_requirement'] as const
+export type SuggestionKind = (typeof SUGGESTION_KINDS)[number]
+
+export interface Suggestion {
+  id: ID
+  kind: SuggestionKind
+  title: string
+  body: string
+  /** Statement or source references backing the suggestion. Empty = labeled as inference. */
+  evidence: NodeRef[]
+  target: NodeRef | null
+  /** Structured payload the user may accept (e.g. a proposed relationship). */
+  payload: Record<string, unknown>
+  origin: Exclude<Origin, 'human'>
+  provider: string
+  status: 'pending' | 'accepted' | 'dismissed'
+  createdAt: ISODate
+  reviewedBy: ID | null
+}
+
+export interface AuditEvent {
+  id: ID
+  at: ISODate
+  actorId: ID
+  action: string
+  target: NodeRef | null
+  summary: string
+}
+
+// ---------------------------------------------------------------------------
+// Aggregate
+// ---------------------------------------------------------------------------
+
+export interface ProjectData {
+  project: Project
+  people: Person[]
+  sources: Source[]
+  statements: Statement[]
+  relationships: Relationship[]
+  themes: Theme[]
+  questions: OpenQuestion[]
+  winThemes: WinTheme[]
+  principles: GuidingPrinciple[]
+  drivers: DesignDriver[]
+  decisions: Decision[]
+  milestones: Milestone[]
+  comments: Comment[]
+  suggestions: Suggestion[]
+  audit: AuditEvent[]
+  /** Monotonic revision for optimistic concurrency. */
+  revision: number
+}
+
+export interface ProjectSummary {
+  id: ID
+  code: string
+  name: string
+  sector: Sector
+  phase: Phase
+  isDemo: boolean
+  ownerName: string
+}

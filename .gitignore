@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.*
+!.env.example
+coverage
+test-results
+playwright-report
+.DS_Store
+# Never commit real project material or exports
+/private
+/exports
+*.pptx
+*.xlsx
