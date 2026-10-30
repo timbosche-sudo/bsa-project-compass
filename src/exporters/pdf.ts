@@ -7,6 +7,7 @@ import { dashboardModel } from '@/domain/metrics'
 import { evidenceFor, gapReport } from '@/domain/traceability'
 import type { Decision, ProjectData } from '@/domain/types'
 import { downloadBlob, exportFilename, provenanceLines, reportReadiness } from './common'
+import { isActiveFramework } from '@/domain/wording'
 
 /** jsPDF's standard fonts are WinAnsi; normalize typographic characters. */
 export function clean(s: string | null | undefined): string {
@@ -149,7 +150,7 @@ export async function alignmentReportPdf(data: ProjectData) {
 
   doc.heading(t.winTheme)
   if (!data.winThemes.length) doc.para('No Win Theme recorded.', { italic: true, color: MUTED })
-  for (const w of data.winThemes.filter((x) => x.status !== 'superseded')) {
+  for (const w of data.winThemes.filter((x) => isActiveFramework(x.status))) {
     doc.eyebrow(`${w.code} - ${draftTag(w.status)}`)
     doc.para(w.statement, { size: 15, bold: true })
     if (w.narrative) doc.para(w.narrative)
@@ -159,7 +160,7 @@ export async function alignmentReportPdf(data: ProjectData) {
   doc.heading(`${t.guidingPrinciple}s`)
   doc.table({
     head: [['ID', 'Principle', 'Statement', 'Category', 'Status', 'Drivers']],
-    body: [...data.principles].filter((x) => x.status !== 'superseded').sort((a, b) => a.order - b.order).map((x) => [x.code, x.title, x.statement, CATEGORY_LABELS[x.category], draftTag(x.status), String(principleDriverIds(data, x.id).length)]),
+    body: [...data.principles].filter((x) => isActiveFramework(x.status)).sort((a, b) => a.order - b.order).map((x) => [x.code, x.title, x.statement, CATEGORY_LABELS[x.category], draftTag(x.status), String(principleDriverIds(data, x.id).length)]),
     columnStyles: { 0: { cellWidth: 36 }, 1: { cellWidth: 90, fontStyle: 'bold' }, 4: { cellWidth: 70 }, 5: { cellWidth: 36 } },
   })
 
@@ -179,7 +180,7 @@ export async function alignmentReportPdf(data: ProjectData) {
   })
 
   doc.heading('Evidence traceability')
-  for (const pr of [...data.principles].filter((x) => x.status !== 'superseded').sort((a, b) => a.order - b.order)) {
+  for (const pr of [...data.principles].filter((x) => isActiveFramework(x.status)).sort((a, b) => a.order - b.order)) {
     const ev = evidenceFor(data, { type: 'principle', id: pr.id })
     doc.eyebrow(`${pr.code} ${pr.title} - ${ev.all.length} supporting statement(s)`)
     if (!ev.all.length) doc.para('No supporting evidence recorded - unsupported.', { italic: true, color: [184, 58, 20] })
@@ -271,3 +272,10 @@ export async function decisionRecordPdf(data: ProjectData, dec: Decision) {
   downloadBlob(doc.finish(), exportFilename(data, `decision-${dec.code}`, 'pdf'))
 }
 
+
+/** A branded report document with cover and footer, for other exporters to fill. */
+export function createReport(data: ProjectData, title: string) {
+  const doc = new Doc(data, title)
+  cover(doc, data, title)
+  return doc
+}

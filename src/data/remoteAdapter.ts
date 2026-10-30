@@ -1,4 +1,5 @@
 import type { CommandResult } from '@/domain/commands'
+import { normalizeProjectData } from '@/domain/normalize'
 import type { Person, ProjectData, ProjectSummary } from '@/domain/types'
 import { AccessDeniedError, ConflictError, type DataAdapter, type NewProjectInput } from './adapter'
 import type { SupabaseAuth } from './auth'
@@ -38,8 +39,8 @@ export class RemoteAdapter implements DataAdapter {
   listProjects(): Promise<ProjectSummary[]> {
     return this.call('/projects')
   }
-  loadProject(projectId: string): Promise<ProjectData> {
-    return this.call(`/projects/${encodeURIComponent(projectId)}`)
+  async loadProject(projectId: string): Promise<ProjectData> {
+    return normalizeProjectData(await this.call<ProjectData>(`/projects/${encodeURIComponent(projectId)}`))
   }
   execute(projectId: string, command: unknown, _actorId: string, expectedRevision: number): Promise<CommandResult> {
     // The server derives the actor from the verified token; the client never asserts identity.

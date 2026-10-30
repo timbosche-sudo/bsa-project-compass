@@ -4,6 +4,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { handle, type AiClient, type Store } from '../_shared/api.ts'
 import type { Confidentiality, ProjectData } from '../../../src/domain/types.ts'
+import { normalizeProjectData } from '../../../src/domain/normalize.ts'
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 const SUPABASE_URL = env('SUPABASE_URL')
@@ -45,7 +46,7 @@ function pgStore(admin: SupabaseClient): Store {
     },
     async loadState(projectId) {
       const { data } = await admin.from('project_state').select('data,revision').eq('project_id', projectId).maybeSingle()
-      return data ? ({ ...(data.data as ProjectData), revision: Number(data.revision) }) : null
+      return data ? normalizeProjectData({ ...(data.data as ProjectData), revision: Number(data.revision) }) : null
     },
     async saveState(projectId, data, expectedRevision, actorId) {
       const { data: rows, error } = await admin

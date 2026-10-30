@@ -87,8 +87,10 @@ export const TRANSCRIPTION_LABELS: Record<TranscriptionStatus, string> = {
 
 export const APPROVAL_LABELS: Record<ApprovalStatus, string> = {
   proposed: 'Proposed',
-  in_review: 'In Review',
+  in_review: 'Discussing',
+  needs_refinement: 'Needs Refinement',
   approved: 'Approved',
+  not_adopted: 'Not Adopted',
   superseded: 'Superseded',
 }
 

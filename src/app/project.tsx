@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import { ConflictError } from '@/data/adapter'
 import { useToast } from '@/components/Toast'
 import { can as canRole, roleFor, type Capability } from '@/domain/permissions'
@@ -15,9 +15,22 @@ export function useProjects() {
   return useQuery({ queryKey: projectsKey(actor?.id), queryFn: () => adapter.listProjects(actor!.id), enabled: !!actor })
 }
 
-export function useProjectQuery(projectId: string) {
+export function useProjectQuery(projectId: string, opts: { live?: boolean } = {}) {
   const { adapter, actor } = useSession()
-  return useQuery({ queryKey: projectKey(projectId, actor?.id), queryFn: () => adapter.loadProject(projectId, actor!.id), enabled: !!actor, retry: false })
+  const qc = useQueryClient()
+  const key = projectKey(projectId, actor?.id)
+  useEffect(() => {
+    if (!adapter.subscribe || !actor) return
+    return adapter.subscribe(projectId, () => qc.invalidateQueries({ queryKey: ['project', projectId] }))
+  }, [adapter, projectId, actor, qc])
+  return useQuery({
+    queryKey: key,
+    queryFn: () => adapter.loadProject(projectId, actor!.id),
+    enabled: !!actor,
+    retry: false,
+    // Without push notifications (secure mode), live views poll for changes.
+    refetchInterval: opts.live && !adapter.subscribe ? 4000 : false,
+  })
 }
 
 interface ProjectContextValue {

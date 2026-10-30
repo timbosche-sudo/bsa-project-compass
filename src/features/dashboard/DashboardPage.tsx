@@ -9,6 +9,7 @@ import { driverStatus, MEASUREMENT_STATE_LABELS, type MeasurementState } from '@
 import { DECISION_STATUS_LABELS, DRIVER_STATUS_LABELS, PHASE_LABELS } from '@/domain/labels'
 import { dashboardModel, type DashboardFilters } from '@/domain/metrics'
 import { DRIVER_STATUSES, type DecisionStatus, type DesignDriver, type DriverStatus, type Phase } from '@/domain/types'
+import { isActiveFramework } from '@/domain/wording'
 
 /** Status → token. Status hues are reserved for state and always paired with a text label. */
 const STATUS_FILL: Record<DriverStatus, string> = {
@@ -53,7 +54,7 @@ export default function DashboardPage() {
       />
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="Dashboard filters">
-        <Select aria-label="Guiding principle" className="w-auto max-w-[240px]" value={filters.principleId ?? ''} onChange={(e) => set('principle', e.target.value)} options={[{ value: '', label: `All ${t.guidingPrinciple.toLowerCase()}s` }, ...data.principles.filter((p) => p.status !== 'superseded').map((p) => ({ value: p.id, label: `${p.code} ${p.title}` }))]} />
+        <Select aria-label="Guiding principle" className="w-auto max-w-[240px]" value={filters.principleId ?? ''} onChange={(e) => set('principle', e.target.value)} options={[{ value: '', label: `All ${t.guidingPrinciple.toLowerCase()}s` }, ...data.principles.filter((p) => isActiveFramework(p.status)).map((p) => ({ value: p.id, label: `${p.code} ${p.title}` }))]} />
         <Select aria-label="Responsible organization" className="w-auto" value={filters.organization ?? ''} onChange={(e) => set('org', e.target.value)} options={[{ value: '', label: 'All organizations' }, ...m.organizations.map((o) => ({ value: o, label: o }))]} />
         <Select aria-label="Project phase" className="w-auto" value={filters.phase ?? ''} onChange={(e) => set('phase', e.target.value)} options={[{ value: '', label: 'All phases' }, ...Object.entries(PHASE_LABELS).map(([value, label]) => ({ value, label }))]} />
         <Select aria-label="Decision status" className="w-auto" value={filters.decisionStatus ?? ''} onChange={(e) => set('decision', e.target.value)} options={[{ value: '', label: 'All decision statuses' }, ...Object.entries(DECISION_STATUS_LABELS).map(([value, label]) => ({ value, label }))]} />

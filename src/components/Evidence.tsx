@@ -8,6 +8,7 @@ import type { NodeRef, NodeType, RelationshipType, Statement } from '@/domain/ty
 import { Dialog, useConfirm } from './Dialog'
 import { ConfidenceBadge, CriticalityBadge, KindBadge, OriginBadge, TranscriptionBadge } from './StatusBadge'
 import { Badge, Button, cx, EmptyState, Field, IconButton, Input, Select } from './ui'
+import { isActiveFramework } from '@/domain/wording'
 
 /** Verbatim stakeholder wording, always visually distinct from interpretation. */
 export function StatementQuote({ statement, compact, showSource = true }: { statement: Statement; compact?: boolean; showSource?: boolean }) {
@@ -211,7 +212,7 @@ export function NodePicker({
       type === 'statement'
         ? data.statements.map((s) => ({ id: s.id, code: s.code, title: s.originalText, sub: data.sources.find((x) => x.id === s.sourceId)?.title ?? '' }))
         : type === 'principle'
-          ? data.principles.filter((p) => p.status !== 'superseded').map((p) => ({ id: p.id, code: p.code, title: p.title, sub: p.statement }))
+          ? data.principles.filter((p) => isActiveFramework(p.status)).map((p) => ({ id: p.id, code: p.code, title: p.title, sub: p.statement }))
           : type === 'driver'
             ? data.drivers.filter((d) => d.approvalStatus !== 'superseded').map((d) => ({ id: d.id, code: d.code, title: d.title, sub: d.description }))
             : type === 'theme'

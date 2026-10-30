@@ -31,6 +31,7 @@ export const CAPABILITIES = [
   'suggestion.review',
   'report.export',
   'audit.read',
+  'workshop.facilitate',
 ] as const
 export type Capability = (typeof CAPABILITIES)[number]
 
@@ -55,6 +56,7 @@ const EDIT: Capability[] = [
   'decision.edit',
   'decision.recommend',
   'suggestion.review',
+  'workshop.facilitate',
 ]
 const REVIEW: Capability[] = [
   ...READ,

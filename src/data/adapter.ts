@@ -26,6 +26,8 @@ export interface DataAdapter {
   execute(projectId: string, command: unknown, actorId: string, expectedRevision: number): Promise<CommandResult>
   createProject(input: NewProjectInput, actorId: string): Promise<ProjectSummary>
   resetDemo?(): Promise<void>
+  /** Notifies when the project changes elsewhere (another window or user). Returns an unsubscribe function. */
+  subscribe?(projectId: string, onChange: () => void): () => void
   /** Server-side AI assistance (remote mode only). */
   assist?(projectId: string, task: string): Promise<unknown>
 }

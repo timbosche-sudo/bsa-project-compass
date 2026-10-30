@@ -7,6 +7,7 @@ import { useProject } from '@/app/project'
 import { Badge, Button, Card, cx, Segmented, Select } from '@/components/ui'
 import { NODE_TYPE_LABELS, RELATIONSHIP_LABELS } from '@/domain/labels'
 import { buildGraph, focusSet, GRAPH_COLUMNS, nodePath, type Graph, type GraphNode } from '@/domain/traceability'
+import { isActiveFramework } from '@/domain/wording'
 
 const COL_W = 270
 const ROW_H = 66
@@ -151,7 +152,7 @@ export function RelationshipExplorer() {
             setPrincipleFocus(e.target.value)
             setSelected(null)
           }}
-          options={[{ value: '', label: 'Focus: whole project' }, ...data.principles.filter((p) => p.status !== 'superseded').map((p) => ({ value: p.id, label: `Focus: ${p.code} ${p.title}` }))]}
+          options={[{ value: '', label: 'Focus: whole project' }, ...data.principles.filter((p) => isActiveFramework(p.status)).map((p) => ({ value: p.id, label: `Focus: ${p.code} ${p.title}` }))]}
         />
         <label className="flex items-center gap-2 text-[12.5px] text-ink-2">
           <input type="checkbox" className="accent-[var(--c-accent)]" checked={includeProposed} onChange={(e) => setIncludeProposed(e.target.checked)} /> Include proposed links

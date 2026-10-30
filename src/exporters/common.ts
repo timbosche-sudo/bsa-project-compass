@@ -1,3 +1,4 @@
+import { isActiveFramework } from '@/domain/wording'
 import type { ProjectData } from '@/domain/types'
 
 export interface Table {
@@ -38,7 +39,7 @@ export function reportReadiness(data: ProjectData) {
   const issues: string[] = []
   const winThemeApproved = data.winThemes.some((w) => w.status === 'approved')
   if (!winThemeApproved) issues.push('No Win Theme is approved.')
-  const unapproved = data.principles.filter((p) => p.status !== 'approved' && p.status !== 'superseded')
+  const unapproved = data.principles.filter((p) => p.status !== 'approved' && isActiveFramework(p.status))
   if (unapproved.length) issues.push(`${unapproved.length} guiding principle(s) are not approved (${unapproved.map((p) => p.code).join(', ')}).`)
   const drafts = data.drivers.filter((d) => d.approvalStatus === 'proposed' || d.approvalStatus === 'under_review')
   if (drafts.length) issues.push(`${drafts.length} Design Driver(s) are drafts and will be labelled as such.`)

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CheckCircle2, GitBranch, Lock, MessageSquare, Pencil, Plus, Send, ShieldCheck } from 'lucide-react'
+import { ArrowDown, ArrowUp, Presentation, CheckCircle2, GitBranch, Lock, MessageSquare, Pencil, Plus, Send, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useProject } from '@/app/project'
@@ -11,6 +11,7 @@ import { driverStatus, principleDriverIds } from '@/domain/drivers'
 import { CATEGORY_LABELS } from '@/domain/labels'
 import { evidenceFor, isOwnerEvidence, isWorkshopEvidence } from '@/domain/traceability'
 import type { GuidingPrinciple, PrincipleCategory, PrincipleContent, WinTheme } from '@/domain/types'
+import { isActiveFramework } from '@/domain/wording'
 
 export default function VisionPage() {
   const { data } = useProject()
@@ -21,6 +22,13 @@ export default function VisionPage() {
         eyebrow="Layers one and two"
         title="Vision & Principles"
         description={`The ${t.winTheme} communicates why the project matters. ${t.guidingPrinciple}s define what success must look like. Approved text is locked: neither edits nor the assistant can silently change it.`}
+        actions={
+          <Link to={`/projects/${data.project.id}/workshop`}>
+            <Button variant="primary" icon={<Presentation className="size-4" />}>
+              Open Owner Workshop
+            </Button>
+          </Link>
+        }
       />
       <WinThemes />
       <Principles />
@@ -143,7 +151,7 @@ function WinThemeCard({ w, onEdit }: { w: WinTheme; onEdit: () => void }) {
           )}
           {can('framework.edit') && w.status === 'proposed' && (
             <Button size="sm" icon={<Send className="size-3.5" />} onClick={() => gov.submit(w.id, w.code)}>
-              Submit for review
+              Move to discussion
             </Button>
           )}
           {can('framework.approve') && w.status === 'in_review' && (
@@ -264,7 +272,7 @@ function Principles() {
   const [creating, setCreating] = useState(false)
   const t = data.project.terminology
   const list = [...data.principles].sort((a, b) => a.order - b.order)
-  const active = list.filter((p) => p.status !== 'superseded')
+  const active = list.filter((p) => isActiveFramework(p.status))
   const selectedId = params.get('principle') ?? active[0]?.id
   const selected = data.principles.find((p) => p.id === selectedId)
 
@@ -345,7 +353,7 @@ function Principles() {
 function CoverageTable() {
   const { data } = useProject()
   const rows = data.principles
-    .filter((p) => p.status !== 'superseded')
+    .filter((p) => isActiveFramework(p.status))
     .sort((a, b) => a.order - b.order)
     .map((p) => {
       const e = evidenceFor(data, { type: 'principle', id: p.id })
@@ -452,7 +460,7 @@ function PrincipleDetail({ p }: { p: GuidingPrinciple }) {
           )}
           {can('framework.edit') && p.status === 'proposed' && (
             <Button size="sm" icon={<Send className="size-3.5" />} onClick={() => gov.submit(p.id, p.code)}>
-              Submit for review
+              Move to discussion
             </Button>
           )}
           {can('framework.approve') && p.status === 'in_review' && (

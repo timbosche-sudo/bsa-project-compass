@@ -8,6 +8,7 @@ import { Badge, Card, CardHeader, EmptyState } from '@/components/ui'
 import { principleDriverIds } from '@/domain/drivers'
 import { CATEGORY_LABELS, PHASE_LABELS, SECTOR_LABELS } from '@/domain/labels'
 import { dashboardModel } from '@/domain/metrics'
+import { isActiveFramework } from '@/domain/wording'
 
 export function OverviewPage() {
   const { data, personName } = useProject()
@@ -16,7 +17,7 @@ export function OverviewPage() {
   const t = p.terminology
   const m = dashboardModel(data)
   const winTheme = data.winThemes.find((w) => w.status === 'approved') ?? data.winThemes.find((w) => w.status === 'in_review') ?? data.winThemes.find((w) => w.status === 'proposed')
-  const principles = data.principles.filter((x) => x.status !== 'superseded').sort((a, b) => a.order - b.order)
+  const principles = data.principles.filter((x) => isActiveFramework(x.status)).sort((a, b) => a.order - b.order)
 
   const attention: { icon: ReactNode; label: string; count: number; to: string }[] = [
     { icon: <Scale className="size-4" />, label: `${t.decision}s awaiting approval`, count: m.decisionsAwaitingApproval.length, to: `${base}/decisions` },
@@ -68,7 +69,7 @@ export function OverviewPage() {
           <>
             <p className="relative mt-4 max-w-4xl text-[34px] leading-[1.08] font-semibold tracking-[-0.03em] sm:text-[44px]">{winTheme.statement}</p>
             <p className="relative mt-4 max-w-3xl text-[14.5px] leading-relaxed opacity-75">{winTheme.narrative}</p>
-            {winTheme.status !== 'approved' && <p className="relative mt-4 text-[12px] opacity-60">Candidate — not yet approved. {data.winThemes.filter((w) => w.status !== 'superseded').length} alternative(s) under consideration.</p>}
+            {winTheme.status !== 'approved' && <p className="relative mt-4 text-[12px] opacity-60">Candidate — not yet approved. {data.winThemes.filter((w) => isActiveFramework(w.status)).length} alternative(s) under consideration.</p>}
           </>
         ) : (
           <p className="relative mt-4 text-[15px] opacity-75">No {t.winTheme} drafted yet.</p>

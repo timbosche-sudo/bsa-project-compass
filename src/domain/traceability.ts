@@ -1,4 +1,5 @@
 import type { ID, NodeRef, NodeType, ProjectData, Relationship, Statement } from './types'
+import { isActiveFramework } from './wording'
 
 export const refKey = (r: NodeRef) => `${r.type}:${r.id}`
 export const sameRef = (a: NodeRef, b: NodeRef) => a.type === b.type && a.id === b.id
@@ -167,7 +168,7 @@ export function gapReport(data: ProjectData): GapReport {
   const linkedStatementIds = new Set(rels.filter((r) => r.from.type === 'statement').map((r) => r.from.id))
   rels.filter((r) => r.to.type === 'statement').forEach((r) => linkedStatementIds.add(r.to.id))
 
-  const activePrinciples = data.principles.filter((p) => p.status !== 'superseded')
+  const activePrinciples = data.principles.filter((p) => isActiveFramework(p.status))
   const activeDrivers = data.drivers.filter((d) => d.approvalStatus !== 'superseded')
   const activeThemes = data.themes.filter((t) => t.status !== 'archived')
 
@@ -319,7 +320,7 @@ export function buildGraph(data: ProjectData, opts: { includeProposed?: boolean 
   data.sources.forEach((s) => add({ type: 'source', id: s.id }))
   data.statements.forEach((s) => add({ type: 'statement', id: s.id }, { orphan: orphanIds.has(s.id), critical: s.criticality === 'critical' || s.kind === 'nonnegotiable' }))
   data.themes.filter((t) => t.status !== 'archived').forEach((t) => add({ type: 'theme', id: t.id }, { status: t.status }))
-  data.principles.filter((p) => p.status !== 'superseded').forEach((p) => add({ type: 'principle', id: p.id }, { unsupported: unsupported.has(p.id), status: p.status }))
+  data.principles.filter((p) => isActiveFramework(p.status)).forEach((p) => add({ type: 'principle', id: p.id }, { unsupported: unsupported.has(p.id), status: p.status }))
   data.drivers.filter((d) => d.approvalStatus !== 'superseded').forEach((d) => add({ type: 'driver', id: d.id }, { unsupported: unsupported.has(d.id), status: d.approvalStatus }))
   data.decisions.forEach((d) => add({ type: 'decision', id: d.id }, { status: d.status }))
 

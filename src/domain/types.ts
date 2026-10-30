@@ -273,7 +273,11 @@ export interface OpenQuestion {
 // Vision: Win Themes and Guiding Principles (versioned, approvable)
 // ---------------------------------------------------------------------------
 
-export const APPROVAL_STATUSES = ['proposed', 'in_review', 'approved', 'superseded'] as const
+/**
+ * Review statuses for Win Themes and Guiding Principles.
+ * 'in_review' is presented as "Discussing" (active review, e.g. in an Owner workshop).
+ */
+export const APPROVAL_STATUSES = ['proposed', 'in_review', 'needs_refinement', 'approved', 'not_adopted', 'superseded'] as const
 export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number]
 
 export interface VersionEntry<T, S extends string = ApprovalStatus> {
@@ -295,10 +299,17 @@ export interface Comment {
 }
 
 export interface ApprovalRecord {
+  /** The person who approved (e.g. the Owner representative). */
   approvedBy: ID
   approvedAt: ISODate
   version: number
   note: string
+  /** Who entered the approval, when recorded on the approver's behalf in a workshop. */
+  recordedBy?: ID
+  /** Exact approved wording, frozen at approval time. */
+  wording?: string
+  /** Workshop session in which the approval was given. */
+  sessionId?: ID | null
 }
 
 export interface WinThemeContent {
@@ -534,6 +545,61 @@ export interface AuditEvent {
 }
 
 // ---------------------------------------------------------------------------
+// Owner alignment workshops
+// ---------------------------------------------------------------------------
+
+export interface WorkshopAttendee {
+  name: string
+  organization: string
+  role: string
+}
+
+export interface WorkshopAction {
+  id: ID
+  text: string
+  owner: string
+  due: ISODate | null
+  done: boolean
+}
+
+export interface WorkshopLogEntry {
+  at: ISODate
+  actorId: ID
+  action: string
+  target: NodeRef | null
+  summary: string
+}
+
+export interface WorkshopSession {
+  id: ID
+  code: string
+  title: string
+  date: ISODate
+  status: 'planned' | 'live' | 'closed'
+  facilitatorId: ID
+  attendees: WorkshopAttendee[]
+  /** Facilitator notes keyed by item ("principle:<id>", "winTheme:<id>"); never shown to the audience. */
+  notes: Record<string, string>
+  generalNotes: string
+  actions: WorkshopAction[]
+  /** Framework changes made while the session was live (recorded automatically). */
+  log: WorkshopLogEntry[]
+  startedAt: ISODate | null
+  endedAt: ISODate | null
+  createdBy: ID
+}
+
+export interface TrashItem {
+  id: ID
+  kind: 'winTheme' | 'principle'
+  entity: WinTheme | GuidingPrinciple
+  relationships: Relationship[]
+  comments: Comment[]
+  deletedBy: ID
+  deletedAt: ISODate
+}
+
+// ---------------------------------------------------------------------------
 // Aggregate
 // ---------------------------------------------------------------------------
 
@@ -553,6 +619,9 @@ export interface ProjectData {
   comments: Comment[]
   suggestions: Suggestion[]
   audit: AuditEvent[]
+  workshops: WorkshopSession[]
+  /** Recoverable deletions (supports undo and accidental-deletion recovery). */
+  trash: TrashItem[]
   /** Monotonic revision for optimistic concurrency. */
   revision: number
 }

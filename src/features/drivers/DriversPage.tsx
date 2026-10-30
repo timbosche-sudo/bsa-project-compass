@@ -10,6 +10,7 @@ import { DRIVER_STATUS_LABELS, PHASE_LABELS, REQUIREMENT_CLASS_LABELS } from '@/
 import { DRIVER_STATUSES, PHASES, type DesignDriver, type DriverStatus } from '@/domain/types'
 import { driverRegisterTable } from '@/exporters/tables'
 import { DriverFormDialog } from './DriverForm'
+import { isActiveFramework } from '@/domain/wording'
 
 type View = 'table' | 'cards' | 'principle' | 'owner' | 'phase'
 type SortKey = 'code' | 'title' | 'status' | 'owner' | 'phase' | 'completeness'
@@ -103,7 +104,7 @@ export default function DriversPage() {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
           <Input className="pl-9" placeholder={`Search ${t.designDriver.toLowerCase()}s…`} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search drivers" />
         </div>
-        <Select aria-label="Principle" className="w-auto max-w-[220px]" value={principle} onChange={(e) => update('principle', e.target.value)} options={[{ value: '', label: 'All principles' }, ...data.principles.filter((p) => p.status !== 'superseded').map((p) => ({ value: p.id, label: `${p.code} ${p.title}` }))]} />
+        <Select aria-label="Principle" className="w-auto max-w-[220px]" value={principle} onChange={(e) => update('principle', e.target.value)} options={[{ value: '', label: 'All principles' }, ...data.principles.filter((p) => isActiveFramework(p.status)).map((p) => ({ value: p.id, label: `${p.code} ${p.title}` }))]} />
         <Select aria-label="Measurement" className="w-auto" value={measurement} onChange={(e) => update('measurement', e.target.value)} options={[{ value: '', label: 'Any measurement state' }, ...Object.entries(MEASUREMENT_STATE_LABELS).map(([value, label]) => ({ value, label }))]} />
         <Select aria-label="Scope" className="w-auto" value={scope} onChange={(e) => update('scope', e.target.value)} options={[{ value: '', label: 'Facility & delivery' }, { value: 'facility', label: 'Facility' }, { value: 'delivery', label: 'Project delivery' }]} />
         <Select

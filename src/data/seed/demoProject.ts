@@ -29,6 +29,7 @@ import type {
   TranscriptionStatus,
   VersionEntry,
 } from '@/domain/types'
+import { wordingOf } from '@/domain/wording'
 
 export const DEMO_PROJECT_ID = 'demo-pharmacy'
 export const DEMO_PROJECT_2_ID = 'demo-learning'
@@ -145,7 +146,7 @@ function principle(n: number, content: PrincipleContent, status: ApprovalStatus,
     status,
     version: versions.length,
     versions,
-    approval: status === 'approved' ? { approvedBy: PEOPLE.morgan.id, approvedAt: '2026-07-29T18:00:00.000Z', version: versions.length, note: 'Approved at Visioning Session 3' } : null,
+    approval: status === 'approved' ? { approvedBy: PEOPLE.morgan.id, approvedAt: '2026-07-29T18:00:00.000Z', version: versions.length, note: 'Approved at Visioning Session 3', recordedBy: PEOPLE.jordan.id, wording: wordingOf(content), sessionId: 'ws-1' } : null,
     accountableApproverId: extra.approver ?? PEOPLE.morgan.id,
     createdBy: PEOPLE.jordan.id,
   }
@@ -506,6 +507,56 @@ export function createDemoProject(): ProjectData {
       { id: 'c-3', target: { type: 'driver', id: 'dd-7' }, authorId: P.priya.id, body: 'We need to understand the area cost of reaching 75% before DD.', createdAt: '2026-09-18T15:00:00.000Z', resolved: false },
     ],
     suggestions: [],
+    workshops: [
+      {
+        id: 'ws-1',
+        code: 'WS-01',
+        title: 'Visioning Session 3 — Principles',
+        date: '2026-07-29',
+        status: 'closed',
+        facilitatorId: P.avery.id,
+        attendees: [
+          { name: 'Dr. Morgan Ellery', organization: ORG, role: 'VP, Pharmacy Services (approver)' },
+          { name: 'Priya Ramanathan', organization: ORG, role: 'Director, Facilities Planning' },
+          { name: 'Avery Lindqvist', organization: 'BSA', role: 'Facilitator' },
+          { name: 'Jordan Okafor', organization: 'BSA', role: 'Project Architect' },
+        ],
+        notes: { 'principle:gp-1': 'Owner asked that "foreseeable disruption" explicitly include equipment failure.' },
+        generalNotes: 'Synthetic record of an earlier session in which GP-01, GP-02 and GP-04 were approved.',
+        actions: [{ id: 'act-1', text: 'Confirm autonomous run-time duration for critical systems (Q-001).', owner: 'Facilities Planning', due: '2026-11-20', done: false }],
+        log: [],
+        startedAt: '2026-07-29T16:00:00.000Z',
+        endedAt: '2026-07-29T18:30:00.000Z',
+        createdBy: P.avery.id,
+      },
+      {
+        id: 'ws-2',
+        code: 'WS-02',
+        title: 'Owner Alignment Workshop — Win Theme & Principles',
+        date: '2026-11-05',
+        status: 'planned',
+        facilitatorId: P.avery.id,
+        attendees: [
+          { name: 'Dr. Morgan Ellery', organization: ORG, role: 'VP, Pharmacy Services (approver)' },
+          { name: 'Priya Ramanathan', organization: ORG, role: 'Director, Facilities Planning (approver)' },
+          { name: 'Renata Silva', organization: ORG, role: 'Pharmacy Operations Manager' },
+          { name: 'Avery Lindqvist', organization: 'BSA', role: 'Facilitator' },
+          { name: 'Jordan Okafor', organization: 'BSA', role: 'Project Architect' },
+        ],
+        notes: {
+          'winTheme:wt-1': 'Ask whether “Every Tomorrow” reads as growth, resilience, or both.',
+          'principle:gp-3': 'Priya’s comment: make automation refresh explicit.',
+          'principle:gp-6': 'Accountable approver is Priya.',
+        },
+        generalNotes: '',
+        actions: [],
+        log: [],
+        startedAt: null,
+        endedAt: null,
+        createdBy: P.avery.id,
+      },
+    ],
+    trash: [],
     audit: [
       { id: 'au-3', at: '2026-10-22T16:00:00.000Z', actorId: P.jordan.id, action: 'decision.recommend', target: DEC(1), summary: 'Recommended "A — Adjacent to receiving" for DEC-001' },
       { id: 'au-2', at: '2026-10-15T15:00:00.000Z', actorId: P.priya.id, action: 'driver.recordMeasurement', target: DD(12), summary: 'Recorded DD-12 observation: 12 median days (as of 2026-10-15)' },
@@ -588,6 +639,8 @@ export function createEmptyProject(o: {
     comments: [],
     suggestions: [],
     audit: [],
+    workshops: [],
+    trash: [],
     revision: 1,
   }
 }

@@ -51,7 +51,9 @@ The repository was empty: there was no existing code, no design-system files and
 | `src/exporters/*` | CSV (injection-safe), XLSX, PDF report and decision record, PPTX deck |
 | `src/components/*` | Design-system primitives, dialogs and confirmations, evidence, comments, versions |
 | `src/layout/AppShell.tsx` | Navigation, breadcrumbs, search, project and persona switchers, demo banner |
-| `src/features/*` | Pages for each of the nine primary sections |
+| `src/features/*` | Pages for each primary section |
+| `src/features/workshop/*` | Owner Workshop: slide deck, inline editing with autosave and recovery, undo/redo, facilitator panel, dialogs, audience window |
+| `src/domain/workshop.ts`, `wording.ts`, `normalize.ts` | Meeting summary model, canonical wording, data upgrades |
 | `supabase/migrations/*` | Schema, RLS, storage bucket, append-only audit, admin invariant |
 | `supabase/functions/_shared/api.ts` | Framework-independent API handler (unit-tested) |
 | `supabase/functions/api/index.ts` | Deno entry: token verification, CORS, Postgres store, AI adapter |
@@ -84,7 +86,27 @@ Advisory: `pptxgenjs` depends on `image-size`, which has denial-of-service advis
 | 7 Secure backend | Schema, RLS, storage, audit, API, auth client, migration path | **Implemented; partially verified** | RLS on PostgreSQL 16 (15 checks); API handler unit tests. Not yet run on a live Supabase project |
 | 8 AI & hardening | Provider interface, structured output validation, suggestions with human review, confidentiality filtering, injection handling | **Implemented; partially verified** | unit tests with a fake provider; live provider not exercised |
 
-### Remaining work (recommended order)
+### Priority update: Owner Alignment Workshop Mode (complete in demo mode)
+
+Workshop Mode became the top priority after Stage 6. It reuses the existing Win Theme and principle model, versioning, approval records, evidence panel, comments, confirmations and PDF builder. The domain additions are:
+
+- review statuses `needs_refinement` and `not_adopted` (`in_review` is shown as *Discussing*);
+- `framework.setReviewStatus | duplicate | delete | undelete`, `principle.merge`, and `workshop.create | update | setNote | start | end`;
+- Owner approval recorded on the approver's behalf, with exact-wording verification (`expectedWording`, `onBehalfOf`, `sessionId`) and an approval record holding `wording` and `recordedBy`;
+- coalesced autosave versions, recoverable trash, workshop sessions with an automatic change log, `normalizeProjectData` for older stored data, and live cross-window updates (`DataAdapter.subscribe`).
+
+Verification: 11 domain tests, plus 8 end-to-end flows at 1920×1080, 1440×900 and iPad Pro. See [WORKSHOP_MODE.md](WORKSHOP_MODE.md).
+
+### Revised roadmap (recommended order)
+
+1. **Secure backend verification (Stage 7), now the gate for real Owner workshops.** Provision Supabase staging, run the migrations and RLS checks there, deploy the API, configure Entra ID SSO, and run Workshop Mode end to end in remote mode. Add server push (Supabase Realtime) so audience windows update without polling.
+2. **Workshop refinements from first use:** printable handout of adopted wording; optional per-slide speaker notes in the audience-free view; a presenter timer; presentation clicker testing on Windows.
+3. **Design Driver refinements:** link drivers to workshop outcomes, and a driver review deck that reuses the slide stage.
+4. Upload pipeline: signed-URL uploads, virus scanning and text extraction feeding *proposed* statements.
+5. Advanced dashboards and AI analysis (narrative drafting, evaluation), then further Decision Lab work. These were deliberately deferred behind Workshop Mode.
+6. Accessibility audit (WCAG 2.2 AA) and BSA brand token substitution.
+
+### Remaining work (prior plan, superseded by the revised roadmap above)
 
 1. Provision Supabase staging. Run migrations, deploy the function, configure Entra ID SSO, and run an end-to-end smoke test in remote mode.
 2. Browser upload through signed URLs, a virus-scanning hook, and server-side text extraction (PDF, PPTX, DOCX; OCR for photographs) feeding *proposed* statements.

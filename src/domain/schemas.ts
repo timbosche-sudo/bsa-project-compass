@@ -187,6 +187,8 @@ export const terminologySchema = z.object({
   decision: requiredShort,
 })
 
+const attendeeSchema = z.object({ name: requiredShort, organization: shortText, role: shortText })
+
 const suggestionInputSchema = z.object({
   kind: z.enum(SUGGESTION_KINDS),
   title: z.string().max(300),
@@ -251,13 +253,27 @@ export const commandSchema = z.discriminatedUnion('type', [
   cmd('question.resolve', { id, status: z.enum(['answered', 'withdrawn', 'open']), answer: z.string().max(2000) }),
   // Win Themes & principles
   cmd('winTheme.create', { content: winThemeContentSchema }),
-  cmd('winTheme.edit', { id, content: winThemeContentSchema, note: z.string().max(500) }),
+  cmd('winTheme.edit', { id, content: winThemeContentSchema, note: z.string().max(500), coalesce: z.boolean().optional() }),
   cmd('principle.create', { content: principleContentSchema }),
-  cmd('principle.edit', { id, content: principleContentSchema, note: z.string().max(500) }),
+  cmd('principle.edit', { id, content: principleContentSchema, note: z.string().max(500), coalesce: z.boolean().optional() }),
+  cmd('principle.merge', { intoId: id, fromIds: z.array(id).min(1).max(20), content: principleContentSchema }),
   cmd('principle.setApprover', { id, personId: id.nullable() }),
   cmd('principle.reorder', { orderedIds: z.array(id) }),
   cmd('framework.submit', { kind: z.enum(['winTheme', 'principle']), id }),
-  cmd('framework.approve', { kind: z.enum(['winTheme', 'principle']), id, note: z.string().max(500) }),
+  cmd('framework.approve', {
+    kind: z.enum(['winTheme', 'principle']),
+    id,
+    note: z.string().max(500),
+    /** The wording the approver saw. Approval is refused if the item changed since. */
+    expectedWording: z.string().max(12000).optional(),
+    /** Record approval on behalf of this person (e.g. the Owner representative in a live workshop). */
+    onBehalfOf: id.optional(),
+    sessionId: id.optional(),
+  }),
+  cmd('framework.setReviewStatus', { kind: z.enum(['winTheme', 'principle']), id, status: z.enum(['proposed', 'in_review', 'needs_refinement', 'not_adopted']), note: z.string().max(500).optional() }),
+  cmd('framework.duplicate', { kind: z.enum(['winTheme', 'principle']), id }),
+  cmd('framework.delete', { kind: z.enum(['winTheme', 'principle']), id }),
+  cmd('framework.undelete', { trashId: id }),
   cmd('framework.openRevision', { kind: z.enum(['winTheme', 'principle']), id }),
   cmd('framework.restore', { kind: z.enum(['winTheme', 'principle']), id, version: z.number().int().positive() }),
   cmd('framework.supersede', { kind: z.enum(['winTheme', 'principle']), id, note: z.string().max(500) }),
@@ -320,6 +336,23 @@ export const commandSchema = z.discriminatedUnion('type', [
     milestone: z.object({ id: id.optional(), name: requiredShort, date: isoDate, phase: z.enum(PHASES), driverIds: z.array(id), complete: z.boolean() }),
   }),
   cmd('milestone.delete', { id }),
+  // Owner alignment workshops
+  cmd('workshop.create', { title: requiredShort, date: isoDate, attendees: z.array(attendeeSchema).max(60) }),
+  cmd('workshop.update', {
+    id,
+    patch: z
+      .object({
+        title: requiredShort,
+        date: isoDate,
+        attendees: z.array(attendeeSchema).max(60),
+        generalNotes: z.string().max(20000),
+        actions: z.array(z.object({ id, text: z.string().trim().min(1).max(1000), owner: shortText, due: isoDate.nullable(), done: z.boolean() })).max(200),
+      })
+      .partial(),
+  }),
+  cmd('workshop.setNote', { id, itemKey: z.string().regex(/^(winTheme|principle):[\w-]{1,64}$/), text: z.string().max(10000) }),
+  cmd('workshop.start', { id }),
+  cmd('workshop.end', { id }),
 ])
 
 export type Command = z.infer<typeof commandSchema>

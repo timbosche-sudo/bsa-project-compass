@@ -6,6 +6,7 @@ import { Button, Callout, Field, Input, optionsFrom, Segmented, Select, Textarea
 import { driverPrincipleIds } from '@/domain/drivers'
 import { PHASE_LABELS, REQUIREMENT_CLASS_LABELS } from '@/domain/labels'
 import type { DesignDriver, DriverContent, Phase, RequirementClass } from '@/domain/types'
+import { isActiveFramework } from '@/domain/wording'
 
 const EMPTY: DriverContent = {
   title: '',
@@ -209,7 +210,7 @@ export function DriverFormDialog({ open, onOpenChange, driver, onSaved }: { open
             <legend className="eyebrow mb-2">Implements guiding principles</legend>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {data.principles
-                .filter((p) => p.status !== 'superseded')
+                .filter((p) => isActiveFramework(p.status))
                 .map((p) => (
                   <label key={p.id} className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-[13px]">
                     <input type="checkbox" className="accent-[var(--c-accent)]" checked={principleIds.includes(p.id)} onChange={() => setPrincipleIds((x) => (x.includes(p.id) ? x.filter((i) => i !== p.id) : [...x, p.id]))} />

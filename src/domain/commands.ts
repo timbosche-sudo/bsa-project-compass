@@ -4,6 +4,7 @@ import { newId, nextCode } from './ids'
 import { can, PermissionError, roleFor, type Capability } from './permissions'
 import { parseCommand, type Command, type CommandOf, type CommandType } from './schemas'
 import { nodeExists, sameRef } from './traceability'
+import { wordingOf } from './wording'
 import type {
   ApprovalStatus,
   Confidence,
@@ -89,7 +90,18 @@ const REQUIRED: Record<CommandType, Capability> = {
   'principle.setApprover': 'framework.edit',
   'principle.reorder': 'framework.edit',
   'framework.submit': 'framework.edit',
-  'framework.approve': 'framework.approve',
+  // Checked in the handler: approvers approve directly; facilitators may record an approver's decision in a live workshop.
+  'framework.approve': 'project.read',
+  'framework.setReviewStatus': 'framework.edit',
+  'framework.duplicate': 'framework.edit',
+  'framework.delete': 'framework.edit',
+  'framework.undelete': 'framework.edit',
+  'principle.merge': 'framework.edit',
+  'workshop.create': 'workshop.facilitate',
+  'workshop.update': 'workshop.facilitate',
+  'workshop.setNote': 'workshop.facilitate',
+  'workshop.start': 'workshop.facilitate',
+  'workshop.end': 'workshop.facilitate',
   'framework.openRevision': 'framework.edit',
   'framework.restore': 'framework.edit',
   'framework.supersede': 'framework.approve',
@@ -148,6 +160,10 @@ export function applyCommand(data: ProjectData, input: unknown, context: Command
   const handler = handlers[command.type] as Handler<typeof command.type>
   const outcome = handler(draft, command as never, ctx)
   draft.revision = data.revision + 1
+  const live = draft.workshops.find((w) => w.status === 'live')
+  if (live && LOGGED_IN_WORKSHOP.test(command.type)) {
+    live.log.push({ at: context.now, actorId: context.actorId, action: command.type, target: outcome.target ?? null, summary: outcome.summary })
+  }
   draft.audit.unshift({
     id: newId(),
     at: context.now,
@@ -158,6 +174,9 @@ export function applyCommand(data: ProjectData, input: unknown, context: Command
   })
   return { data: draft, createdId: outcome.createdId ?? null }
 }
+
+/** Framework changes made while a workshop is live are recorded in the session log. */
+const LOGGED_IN_WORKSHOP = /^(winTheme\.|principle\.(create|edit|merge|reorder)|framework\.)/
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -219,6 +238,30 @@ function pushVersion<C, S extends string>(entity: Versioned<C, S>, snapshot: C, 
   entity.version += 1
   entity.versions.push({ version: entity.version, snapshot: structuredClone(snapshot), status, changedBy: x.actorId, changedAt: x.now, note })
 }
+
+/**
+ * Record a content edit. With `coalesce`, rapid autosaves by the same person
+ * amend their own latest working version instead of creating one per keystroke
+ * pause. Approved and status-change versions are never amended.
+ */
+const COALESCE_MS = 10 * 60 * 1000
+function recordEdit<C, S extends string>(entity: Versioned<C, S> & { status: S }, snapshot: C, x: Ctx, note: string, coalesce?: boolean) {
+  const last = entity.versions.at(-1)
+  if (
+    coalesce &&
+    last &&
+    last.note === AUTOSAVE_NOTE &&
+    last.changedBy === x.actorId &&
+    last.status === entity.status &&
+    Date.parse(x.now) - Date.parse(last.changedAt) < COALESCE_MS
+  ) {
+    last.snapshot = structuredClone(snapshot)
+    last.changedAt = x.now
+    return
+  }
+  pushVersion(entity, snapshot, entity.status, x, coalesce ? AUTOSAVE_NOTE : note)
+}
+export const AUTOSAVE_NOTE = 'Edited (autosave)'
 
 function frameworkEntity(d: ProjectData, kind: 'winTheme' | 'principle', id: ID): WinTheme | GuidingPrinciple {
   return kind === 'winTheme' ? find(d.winThemes, id, 'Win Theme') : find(d.principles, id, 'Guiding Principle')
@@ -507,7 +550,7 @@ const handlers: Handlers = {
     assertEditable(w.status, 'This Win Theme')
     if (JSON.stringify(winThemeContent(w)) === JSON.stringify(c.content)) throw new DomainError('No changes to save.')
     Object.assign(w, c.content)
-    pushVersion(w, c.content, w.status, x, c.note || 'Edited')
+    recordEdit<WinThemeContent, ApprovalStatus>(w, c.content, x, c.note || 'Edited', c.coalesce)
     return { summary: `Edited Win Theme ${w.code} (v${w.version})`, target: ref('winTheme', w.id) }
   },
   'principle.create': (d, c, x) => {
@@ -522,7 +565,7 @@ const handlers: Handlers = {
     assertEditable(p.status, 'This principle')
     if (JSON.stringify(principleContent(p)) === JSON.stringify(c.content)) throw new DomainError('No changes to save.')
     Object.assign(p, c.content)
-    pushVersion(p, c.content, p.status, x, c.note || 'Edited')
+    recordEdit<PrincipleContent, ApprovalStatus>(p, c.content, x, c.note || 'Edited', c.coalesce)
     return { summary: `Edited principle ${p.code} (v${p.version})`, target: ref('principle', p.id) }
   },
   'principle.setApprover': (d, c) => {
@@ -550,8 +593,25 @@ const handlers: Handlers = {
   },
   'framework.approve': (d, c, x) => {
     const e = frameworkEntity(d, c.kind, c.id)
-    if (e.status !== 'in_review') throw new DomainError('Only items in review can be approved.')
-    if ('accountableApproverId' in e && e.accountableApproverId && e.accountableApproverId !== x.actorId) {
+    if (e.status !== 'in_review') throw new DomainError('Only items being discussed (in review) can be approved.')
+    if (c.expectedWording !== undefined && c.expectedWording !== wordingOf(e)) {
+      throw new DomainError('The wording changed after it was shown for approval. Review the current wording and approve again.')
+    }
+    // Who is approving? Either the actor (an approver), or an approver recorded by a facilitator in a live workshop.
+    let approverId = x.actorId
+    let sessionId: ID | null = null
+    if (c.onBehalfOf && c.onBehalfOf !== x.actorId) {
+      x.require('workshop.facilitate')
+      const session = d.workshops.find((w) => w.id === c.sessionId && w.status === 'live')
+      if (!session) throw new DomainError('Approval on behalf of an approver can only be recorded during a live workshop session.')
+      if (!can(roleFor(d.project, c.onBehalfOf), 'framework.approve')) throw new DomainError('The person recorded as approving must hold an approval role on this project.')
+      approverId = c.onBehalfOf
+      sessionId = session.id
+    } else {
+      x.require('framework.approve')
+      sessionId = d.workshops.find((w) => w.id === c.sessionId && w.status === 'live')?.id ?? null
+    }
+    if ('accountableApproverId' in e && e.accountableApproverId && e.accountableApproverId !== approverId) {
       const approver = d.people.find((p) => p.id === e.accountableApproverId)
       throw new DomainError(`Only the accountable approver (${approver?.name ?? 'assigned'}) can approve this principle.`)
     }
@@ -564,9 +624,86 @@ const handlers: Handlers = {
       }
     }
     e.status = 'approved'
-    pushVersion<WinThemeContent | PrincipleContent, ApprovalStatus>(e as never, contentOf(e), 'approved', x, c.note || 'Approved')
-    e.approval = { approvedBy: x.actorId, approvedAt: x.now, version: e.version, note: c.note }
-    return { summary: `Approved ${e.code} (v${e.version})`, target: ref(c.kind, e.id) }
+    const approverName = d.people.find((p) => p.id === approverId)?.name ?? 'approver'
+    const note = c.note || (approverId !== x.actorId ? `Approved by ${approverName} in workshop` : 'Approved')
+    pushVersion<WinThemeContent | PrincipleContent, ApprovalStatus>(e as never, contentOf(e), 'approved', x, note)
+    e.approval = { approvedBy: approverId, approvedAt: x.now, version: e.version, note: c.note, recordedBy: x.actorId, wording: wordingOf(e), sessionId }
+    return { summary: `Approved ${e.code} (v${e.version})${approverId !== x.actorId ? ` — ${approverName}'s approval recorded` : ''}`, target: ref(c.kind, e.id) }
+  },
+  'framework.setReviewStatus': (d, c, x) => {
+    const e = frameworkEntity(d, c.kind, c.id)
+    if (e.status === 'approved') throw new DomainError(`${e.code} is approved. Open a revision to change its status.`)
+    if (e.status === 'superseded' && c.status !== 'proposed') throw new DomainError('A superseded item can only be reinstated as proposed.')
+    if (e.status === c.status) return { summary: `${e.code} already ${c.status}`, target: ref(c.kind, e.id) }
+    const from = e.status
+    e.status = c.status
+    pushVersion<WinThemeContent | PrincipleContent, ApprovalStatus>(e as never, contentOf(e), c.status, x, c.note || `Status: ${from} → ${c.status}`)
+    return { summary: `${e.code} marked ${c.status.replace('_', ' ')}`, target: ref(c.kind, e.id) }
+  },
+  'framework.duplicate': (d, c, x) => {
+    const e = frameworkEntity(d, c.kind, c.id)
+    let createdId: ID
+    if (c.kind === 'winTheme') {
+      createdId = handlers['winTheme.create'](d, { type: 'winTheme.create', content: { ...winThemeContent(e as WinTheme) } }, x).createdId!
+    } else {
+      const p = e as GuidingPrinciple
+      createdId = handlers['principle.create'](d, { type: 'principle.create', content: { ...principleContent(p), title: `${p.title} (copy)`.slice(0, 200) } }, x).createdId!
+      // Keep the copy next to its original.
+      const copy = find(d.principles, createdId, 'Guiding Principle')
+      d.principles.filter((q) => q.order > p.order && q.id !== createdId).forEach((q) => q.order++)
+      copy.order = p.order + 1
+    }
+    // Carry the evidence links (not driver or decision links) to the copy.
+    for (const r of d.relationships.filter((r) => r.status === 'accepted' && sameRef(r.to, ref(c.kind, e.id)) && (r.from.type === 'statement' || r.from.type === 'theme'))) {
+      addRelationship(d, x, r.from, ref(c.kind, createdId), r.type, { explanation: r.explanation, confidence: r.confidence, accepted: true })
+    }
+    return { summary: `Duplicated ${e.code}`, target: ref(c.kind, createdId), createdId }
+  },
+  'framework.delete': (d, c, x) => {
+    const e = frameworkEntity(d, c.kind, c.id)
+    if (e.approval || e.status === 'approved') throw new DomainError(`${e.code} has been approved and is part of the record. Mark it Not Adopted or supersede it instead.`)
+    const target = ref(c.kind, e.id)
+    const rels = d.relationships.filter((r) => sameRef(r.from, target) || sameRef(r.to, target))
+    const comments = d.comments.filter((cm) => sameRef(cm.target, target))
+    d.relationships = d.relationships.filter((r) => !rels.includes(r))
+    d.comments = d.comments.filter((cm) => !comments.includes(cm))
+    if (c.kind === 'winTheme') d.winThemes = d.winThemes.filter((w) => w.id !== e.id)
+    else d.principles = d.principles.filter((p) => p.id !== e.id)
+    const trashId = newId()
+    d.trash.push({ id: trashId, kind: c.kind, entity: e, relationships: rels, comments, deletedBy: x.actorId, deletedAt: x.now })
+    return { summary: `Deleted ${e.code} (recoverable)`, target: null, createdId: trashId }
+  },
+  'framework.undelete': (d, c) => {
+    const t = find(d.trash, c.trashId, 'Deleted item')
+    if (t.kind === 'winTheme') d.winThemes.push(t.entity as WinTheme)
+    else d.principles.push(t.entity as GuidingPrinciple)
+    // Restore links whose other end still exists.
+    for (const r of t.relationships) if (nodeExists(d, r.from) && nodeExists(d, r.to) && !d.relationships.some((o) => o.id === r.id)) d.relationships.push(r)
+    d.comments.push(...t.comments)
+    d.trash = d.trash.filter((x) => x.id !== t.id)
+    return { summary: `Restored ${t.entity.code}`, target: ref(t.kind, t.entity.id), createdId: t.entity.id }
+  },
+  'principle.merge': (d, c, x) => {
+    const into = find(d.principles, c.intoId, 'Guiding Principle')
+    if (c.fromIds.includes(into.id)) throw new DomainError('A principle cannot be merged into itself.')
+    const froms = c.fromIds.map((id) => find(d.principles, id, 'Guiding Principle'))
+    if (froms.some((f) => f.status === 'superseded')) throw new DomainError('Superseded principles cannot be merged.')
+    if (into.status === 'approved') handlers['framework.openRevision'](d, { type: 'framework.openRevision', kind: 'principle', id: into.id }, x)
+    assertEditable(into.status, into.code)
+    Object.assign(into, c.content)
+    pushVersion<PrincipleContent, ApprovalStatus>(into, c.content, into.status, x, `Merged ${froms.map((f) => f.code).join(', ')} into this principle`)
+    for (const f of froms) {
+      const fromRef = ref('principle', f.id)
+      for (const r of d.relationships.filter((r) => r.status !== 'rejected' && (sameRef(r.to, fromRef) || sameRef(r.from, fromRef)))) {
+        const fromSide = sameRef(r.from, fromRef) ? ref('principle', into.id) : r.from
+        const toSide = sameRef(r.to, fromRef) ? ref('principle', into.id) : r.to
+        if (!sameRef(fromSide, toSide)) addRelationship(d, x, fromSide, toSide, r.type, { explanation: r.explanation, confidence: r.confidence, origin: r.origin, accepted: r.status === 'accepted', proposedBy: r.proposedBy })
+      }
+      removeRelationshipsTouching(d, fromRef)
+      f.status = 'superseded'
+      pushVersion<PrincipleContent, ApprovalStatus>(f, principleContent(f), 'superseded', x, `Merged into ${into.code}`)
+    }
+    return { summary: `Merged ${froms.map((f) => f.code).join(', ')} into ${into.code}`, target: ref('principle', into.id) }
   },
   'framework.openRevision': (d, c, x) => {
     const e = frameworkEntity(d, c.kind, c.id)
@@ -895,6 +1032,42 @@ const handlers: Handlers = {
     s.reviewedBy = x.actorId
     return { summary: `Dismissed suggestion: ${s.title}`, target: s.target }
   },
+  // ---------------- Owner alignment workshops ----------------
+  'workshop.create': (d, c, x) => {
+    const id = newId()
+    const code = nextCode('WS', d.workshops.map((w) => w.code))
+    d.workshops.push({ id, code, title: c.title, date: c.date, status: 'planned', facilitatorId: x.actorId, attendees: c.attendees, notes: {}, generalNotes: '', actions: [], log: [], startedAt: null, endedAt: null, createdBy: x.actorId })
+    return { summary: `Planned workshop ${code} "${c.title}"`, createdId: id }
+  },
+  'workshop.update': (d, c) => {
+    const w = find(d.workshops, c.id, 'Workshop')
+    Object.assign(w, c.patch)
+    return { summary: `Updated workshop ${w.code} (${Object.keys(c.patch).join(', ')})` }
+  },
+  'workshop.setNote': (d, c) => {
+    const w = find(d.workshops, c.id, 'Workshop')
+    if (c.text.trim()) w.notes[c.itemKey] = c.text
+    else delete w.notes[c.itemKey]
+    return { summary: `Updated facilitator notes in ${w.code}` }
+  },
+  'workshop.start': (d, c, x) => {
+    const w = find(d.workshops, c.id, 'Workshop')
+    const other = d.workshops.find((o) => o.status === 'live' && o.id !== w.id)
+    if (other) throw new DomainError(`${other.code} is already live. End it before starting another session.`)
+    if (w.status === 'closed') throw new DomainError('This session has ended. Plan a new session to continue.')
+    w.status = 'live'
+    w.startedAt = w.startedAt ?? x.now
+    w.facilitatorId = x.actorId
+    return { summary: `Started workshop ${w.code}` }
+  },
+  'workshop.end': (d, c, x) => {
+    const w = find(d.workshops, c.id, 'Workshop')
+    if (w.status !== 'live') throw new DomainError('Only a live session can be ended.')
+    w.status = 'closed'
+    w.endedAt = x.now
+    return { summary: `Ended workshop ${w.code} (${w.log.length} recorded change(s))` }
+  },
+
   'milestone.upsert': (d, c) => {
     c.milestone.driverIds.forEach((id) => find(d.drivers, id, 'Design Driver'))
     if (c.milestone.id) {

@@ -28,6 +28,8 @@ const DecisionDetailPage = lazy(() => import('@/features/decisions/DecisionDetai
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage'))
 const ReportsPage = lazy(() => import('@/features/reports/ReportsPage'))
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'))
+const WorkshopPage = lazy(() => import('@/features/workshop/WorkshopPage'))
+const AudiencePage = lazy(() => import('@/features/workshop/AudiencePage'))
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } } })
 
@@ -42,6 +44,16 @@ const router = createBrowserRouter(
       path: '/projects/:projectId',
       element: <ProjectRoute />,
       children: [
+        // Workshop Mode runs full-window, without the application chrome.
+        { path: 'workshop', element: page(<WorkshopPage />) },
+        { path: 'workshop/audience', element: page(<AudiencePage />) },
+        {
+          element: (
+            <AppShell>
+              <Outlet />
+            </AppShell>
+          ),
+          children: [
         { index: true, element: <OverviewPage /> },
         { path: 'intelligence', element: page(<IntelligencePage />) },
         { path: 'intelligence/statement/:statementId', element: page(<StatementRedirect />) },
@@ -56,6 +68,8 @@ const router = createBrowserRouter(
         { path: 'reports', element: page(<ReportsPage />) },
         { path: 'settings', element: page(<SettingsPage />) },
         { path: '*', element: <NotFound /> },
+          ],
+        },
       ],
     },
     { path: '*', element: <NotFound standalone /> },
@@ -163,7 +177,7 @@ function Home() {
 
 function ProjectRoute() {
   const { projectId = '' } = useParams()
-  const query = useProjectQuery(projectId)
+  const query = useProjectQuery(projectId, { live: true })
   if (query.isLoading) return <Loading label="Loading project" />
   if (query.error || !query.data) {
     const denied = query.error instanceof AccessDeniedError
@@ -183,9 +197,7 @@ function ProjectRoute() {
   }
   return (
     <ProjectProvider data={query.data}>
-      <AppShell>
-        <Outlet />
-      </AppShell>
+      <Outlet />
     </ProjectProvider>
   )
 }

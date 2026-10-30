@@ -2,7 +2,7 @@ import { APPROVAL_LABELS, CONFIDENCE_LABELS, CONFIDENTIALITY_LABELS, CRITICALITY
 import type { ApprovalStatus, Confidence, Confidentiality, Criticality, DecisionStatus, DriverStatus, Origin, StatementKind, TargetStatus, ThemeStatus, TranscriptionStatus } from '@/domain/types'
 import { Badge, type Tone } from './ui'
 
-const APPROVAL_TONE: Record<ApprovalStatus, Tone> = { proposed: 'outline', in_review: 'info', approved: 'ok', superseded: 'neutral' }
+export const APPROVAL_TONE: Record<ApprovalStatus, Tone> = { proposed: 'outline', in_review: 'info', needs_refinement: 'warn', approved: 'ok', not_adopted: 'danger', superseded: 'neutral' }
 const DRIVER_TONE: Record<DriverStatus, Tone> = {
   proposed: 'outline',
   under_review: 'info',

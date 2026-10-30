@@ -4,6 +4,7 @@ import { DECISION_STATUS_LABELS, DRIVER_STATUS_LABELS, PHASE_LABELS, SECTOR_LABE
 import { dashboardModel } from '@/domain/metrics'
 import type { ProjectData } from '@/domain/types'
 import { downloadBlob, exportFilename, reportReadiness } from './common'
+import { isActiveFramework } from '@/domain/wording'
 
 const INK = '0B0D0F'
 const ACCENT = '0B8FA1'
@@ -62,7 +63,7 @@ export async function alignmentDeck(data: ProjectData) {
   amb.addText(p.description || 'No project description recorded.', { x: 0.6, y: 2.0, w: 11.5, h: 2.5, fontFace: FONT, fontSize: 16, color: INK, valign: 'top' })
 
   // 4. Win Theme
-  const wts = data.winThemes.filter((w) => w.status !== 'superseded')
+  const wts = data.winThemes.filter((w) => isActiveFramework(w.status))
   const wt = wts.find((w) => w.status === 'approved') ?? wts[0]
   const w = pptx.addSlide()
   w.background = { color: INK }
@@ -73,7 +74,7 @@ export async function alignmentDeck(data: ProjectData) {
 
   // 5. Guiding Principles
   const gp = slide('Guiding principles', `${t.guidingPrinciple}s`)
-  const principles = data.principles.filter((x) => x.status !== 'superseded').sort((a, b) => a.order - b.order)
+  const principles = data.principles.filter((x) => isActiveFramework(x.status)).sort((a, b) => a.order - b.order)
   const cols = 3
   principles.slice(0, 9).forEach((x, i) => {
     const cx = 0.6 + (i % cols) * 4.1

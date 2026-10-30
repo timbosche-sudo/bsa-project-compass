@@ -12,6 +12,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
+    // Primary presentation environment: Windows laptop (1080p) / screen share.
+    { name: 'laptop-1080p', use: { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 } }, testMatch: /workshop/ },
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
     // iPad Pro 12.9" landscape, rendered in Chromium.
     {

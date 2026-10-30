@@ -1,11 +1,13 @@
 import { applyCommand } from '@/domain/commands'
+import { normalizeProjectData } from '@/domain/normalize'
 import { projectInputSchema } from '@/domain/schemas'
 import type { Person, ProjectData } from '@/domain/types'
 import { AccessDeniedError, ConflictError, toSummary, type DataAdapter, type NewProjectInput } from './adapter'
 import { createDemoProject, createEmptyProject, createSecondDemoProject, PEOPLE } from './seed/demoProject'
 
 const STORAGE_KEY = 'compass.demo.v1'
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
+const MIGRATABLE = new Set([3, 4])
 
 interface Stored {
   schema: number
@@ -85,6 +87,24 @@ export class DemoAdapter implements DataAdapter {
     return toSummary(data)
   }
 
+  /**
+   * Live updates across windows of this browser (e.g. the audience window).
+   * The 'storage' event fires in other same-origin documents when localStorage changes.
+   */
+  subscribe(projectId: string, onChange: () => void): () => void {
+    if (typeof window === 'undefined') return () => {}
+    const handler = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY) return
+      const fresh = this.read()
+      if (fresh?.[projectId] && fresh[projectId].revision !== this.projects[projectId]?.revision) {
+        this.projects = fresh
+        onChange()
+      }
+    }
+    window.addEventListener('storage', handler)
+    return () => window.removeEventListener('storage', handler)
+  }
+
   async resetDemo() {
     this.projects = seed()
     this.write()
@@ -95,7 +115,9 @@ export class DemoAdapter implements DataAdapter {
       const raw = this.storage?.getItem(STORAGE_KEY)
       if (!raw) return null
       const parsed = JSON.parse(raw) as Stored
-      return parsed.schema === SCHEMA_VERSION ? parsed.projects : null
+      if (!MIGRATABLE.has(parsed.schema)) return null
+      for (const id of Object.keys(parsed.projects)) parsed.projects[id] = normalizeProjectData(parsed.projects[id])
+      return parsed.projects
     } catch {
       return null
     }

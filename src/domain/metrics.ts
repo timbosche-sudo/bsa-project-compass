@@ -1,6 +1,7 @@
 import { driverCompleteness, driverPrincipleIds, driverStatus, measurementState, type MeasurementState } from './drivers'
 import { gapReport, type GapReport } from './traceability'
 import type { AuditEvent, Decision, DecisionStatus, DesignDriver, DriverStatus, ID, Milestone, Phase, ProjectData } from './types'
+import { isActiveFramework } from './wording'
 
 export interface DashboardFilters {
   principleId?: ID
@@ -58,7 +59,7 @@ export function dashboardModel(data: ProjectData, filters: DashboardFilters = {}
   horizon.setDate(horizon.getDate() + 120)
   const horizonIso = horizon.toISOString().slice(0, 10)
 
-  const principles = data.principles.filter((p) => p.status !== 'superseded')
+  const principles = data.principles.filter((p) => isActiveFramework(p.status))
   return {
     principles: {
       total: principles.length,

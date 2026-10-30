@@ -25,7 +25,7 @@ Project Compass is a structured project-alignment and decision-support platform 
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [Known limitations](#known-limitations)
-- Further documentation: [Architecture & implementation plan](docs/ARCHITECTURE.md) · [Security](docs/SECURITY.md) · [Deployment](docs/DEPLOYMENT.md)
+- Further documentation: [Owner Workshop Mode](docs/WORKSHOP_MODE.md) · [Architecture & implementation plan](docs/ARCHITECTURE.md) · [Security](docs/SECURITY.md) · [Deployment](docs/DEPLOYMENT.md)
 
 ## Quick start
 
@@ -43,6 +43,7 @@ Requires Node.js 20 or newer (developed on Node 22).
 | 1 | **Project Overview** | The Win Theme, the alignment chain (sources → decisions), the principles, what needs attention, milestones and activity. |
 | 2 | **Project Intelligence** | A source register with attribution, classification, version and extraction status. Statements are recorded verbatim, with interpretation kept separate. Handwritten notes are shown beside their transcription, with uncertain words, attributed corrections, revision history and duplicate-photo flags. |
 | 3 | **Alignment Studio** | Group statements into themes; merge, split and move evidence; flag conflicts, themes without Owner support and overlooked requirements; track open questions; promote themes to candidate principles. Also hosts the **Traceability Matrix** (filterable, expandable, CSV/XLSX) and the **Relationship Explorer** (an interactive graph with focus mode and an accessible table alternative). |
+| ★ | **Owner Workshop** | Live meeting mode for presenting, wordsmithing and adopting the Win Theme and Guiding Principles: 16:9 Present and Edit modes on the same screen, inline editing with autosave and recovery, undo/redo, add/duplicate/delete/merge/reorder, review statuses, Owner approval of the exact wording, facilitator notes, an optional audience window, and a meeting summary PDF. See [docs/WORKSHOP_MODE.md](docs/WORKSHOP_MODE.md). |
 | 4 | **Vision & Principles** | Compare Win Theme alternatives side by side. A principle editor provides evidence coverage, a decision-making test, comment threads, governed approval (by the accountable approver), version history with restore, and locking of approved text. |
 | 5 | **Design Drivers** | A register with table, card, principle, accountability and phase views, plus a status strip. Approval and performance are tracked separately. Targets are proposed and approved in separate steps. Observed values are recorded with dates. Verification requires evidence, a reviewer and a date. Commitment fields are locked once a driver is approved. |
 | 6 | **Decision Lab** | Choosing by Advantages: alternatives, mandatory requirements, factors, attributes, least-preferred baselines, advantages, judged importance with rationale, and paramount anchoring. Importance is plotted against cost, which is kept separate. Informal scoring is labelled separately. Recommendation and approval require two different people, decisions lock once approved, and a PDF decision record can be exported. |
@@ -67,6 +68,7 @@ Useful personas: *Avery Lindqvist* (Project Administrator), *Jordan Okafor* (Edi
 
 Sample workflows to try:
 
+0. **Owner workshop.** Open *Owner Workshop*. In the facilitator panel, go to *Session* and *Start session*. Wordsmith GP-03 on the slide, then *Record approval* for Dr. Morgan Ellery. Press **P** to present, open the *Audience window*, and finally end the session and download the meeting summary.
 1. **Transcription.** Open *Project Intelligence → SRC-002*, correct ST-008's uncertain word, then verify it.
 2. **Themes.** Use the *Alignment Studio* to group the orphaned statement ST-019 into a theme, or run the assistant and accept a suggested link.
 3. **Approval.** As *Dr. Morgan Ellery*, approve the Win Theme. Then, as *Jordan Okafor*, see that it is locked and that changing it means opening a revision.
@@ -142,8 +144,8 @@ See [docs/SECURITY.md](docs/SECURITY.md) for the threat model and controls, and 
 
 | Suite | Command | Covers |
 |---|---|---|
-| Unit (57 tests) | `npm test` | Command validation and permissions, approval locking, version restore, transcription governance, driver verification rules, CBA evaluation, traceability and gaps, dashboard metrics, CSV injection protection, report readiness, demo adapter isolation and concurrency, config, rule-based assistant, server API (auth, conflicts, signed URLs, AI confidentiality filtering, citation sanitization, prompt-injection handling) |
-| End-to-end (9 workflows × 2 viewports) | `npm run test:e2e` | Navigation, breadcrumbs and search; source and statement entry with persistence; transcription correction and verification; role enforcement and approval locking; driver verification; Decision Lab approval; real PDF/PPTX/CSV/XLSX downloads; project isolation; Relationship Explorer focus and accessible list. Runs at 1440×900 and iPad Pro 1366×1024 |
+| Unit (68 tests) | `npm test` | Command validation and permissions, approval locking, workshop statuses, Owner approval of exact wording, duplicate/delete/merge, autosave version coalescing, meeting summaries, version restore, transcription governance, driver verification rules, CBA evaluation, traceability and gaps, dashboard metrics, CSV injection protection, report readiness, demo adapter isolation and concurrency, config, rule-based assistant, server API (auth, conflicts, signed URLs, AI confidentiality filtering, citation sanitization, prompt-injection handling) |
+| End-to-end (42 runs) | `npm run test:e2e` | **Workshop (8 flows at 1920×1080, 1440×900 and iPad Pro):** inline editing with autosave and undo/redo; statuses and Owner approval; revising approved wording; add, duplicate, delete with undo, reorder and merge; Present mode with in-place editing; the audience window following the facilitator; recovery of unsaved edits; the meeting summary PDF; viewer permissions. **Core (9 flows × 2 viewports):** Navigation, breadcrumbs and search; source and statement entry with persistence; transcription correction and verification; role enforcement and approval locking; driver verification; Decision Lab approval; real PDF/PPTX/CSV/XLSX downloads; project isolation; Relationship Explorer focus and accessible list. Runs at 1440×900 and iPad Pro 1366×1024 |
 | Database | `npm run verify:rls` | 15 checks against real PostgreSQL: project isolation, no direct content writes, audit append-only, at least one administrator, storage path and type constraints, anonymous denial |
 
 ## Deployment
