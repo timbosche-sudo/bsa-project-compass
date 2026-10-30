@@ -39,6 +39,14 @@ export function nodeLabel(data: ProjectData, ref: NodeRef): { code: string; titl
       const d = data.decisions.find((x) => x.id === ref.id)
       return { code: d?.code ?? '?', title: d?.question ?? 'Missing decision' }
     }
+    case 'opportunity': {
+      const o = data.opportunities.find((x) => x.id === ref.id)
+      return { code: o?.code ?? '?', title: o?.title ?? 'Missing design opportunity' }
+    }
+    case 'outcome': {
+      const o = data.outcomes.find((x) => x.id === ref.id)
+      return { code: o?.code ?? '?', title: o?.statement ?? 'Missing outcome' }
+    }
   }
 }
 
@@ -51,6 +59,8 @@ export function nodeExists(data: ProjectData, ref: NodeRef): boolean {
     principle: data.principles,
     driver: data.drivers,
     decision: data.decisions,
+    opportunity: data.opportunities,
+    outcome: data.outcomes,
   }
   return pools[ref.type].some((x) => x.id === ref.id)
 }
@@ -59,15 +69,19 @@ export function nodePath(projectId: ID, ref: NodeRef): string {
   const base = `/projects/${projectId}`
   switch (ref.type) {
     case 'source':
-      return `${base}/intelligence/${ref.id}`
+      return `${base}/understand/evidence/${ref.id}`
     case 'statement':
-      return `${base}/intelligence/statement/${ref.id}`
+      return `${base}/understand/evidence/statement/${ref.id}`
     case 'theme':
-      return `${base}/alignment?theme=${ref.id}`
+      return `${base}/understand/themes?theme=${ref.id}`
     case 'winTheme':
-      return `${base}/vision?winTheme=${ref.id}`
+      return `${base}/interpret/vision?winTheme=${ref.id}`
     case 'principle':
-      return `${base}/vision?principle=${ref.id}`
+      return `${base}/interpret/principles?principle=${ref.id}`
+    case 'opportunity':
+      return `${base}/interpret/opportunities?opportunity=${ref.id}`
+    case 'outcome':
+      return `${base}/interpret/success?outcome=${ref.id}`
     case 'driver':
       return `${base}/drivers/${ref.id}`
     case 'decision':
@@ -115,6 +129,16 @@ export function evidenceFor(data: ProjectData, ref: NodeRef): EvidenceSet {
   if (ref.type === 'principle' || ref.type === 'winTheme') {
     const themeIds = idsLinked(rels, 'theme', ref.type, ref.id)
     viaThemes = themeIds.flatMap((t) => idsLinked(rels, 'statement', 'theme', t, ['supports']))
+  }
+  if (ref.type === 'opportunity' || ref.type === 'outcome') {
+    const principleIds =
+      ref.type === 'opportunity'
+        ? (data.opportunities.find((o) => o.id === ref.id)?.principleIds ?? [])
+        : [data.outcomes.find((o) => o.id === ref.id)?.principleId].filter((x): x is ID => !!x)
+    inherited = principleIds.flatMap((p) => {
+      const e = evidenceFor(data, { type: 'principle', id: p })
+      return [...e.direct, ...e.viaThemes].map((s) => s.id)
+    })
   }
   if (ref.type === 'driver') {
     const principleIds = rels

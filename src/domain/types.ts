@@ -206,7 +206,7 @@ export interface Statement {
 // Evidence relationships (many-to-many traceability graph)
 // ---------------------------------------------------------------------------
 
-export const NODE_TYPES = ['source', 'statement', 'theme', 'winTheme', 'principle', 'driver', 'decision'] as const
+export const NODE_TYPES = ['source', 'statement', 'theme', 'winTheme', 'principle', 'driver', 'decision', 'opportunity', 'outcome'] as const
 export type NodeType = (typeof NODE_TYPES)[number]
 
 export interface NodeRef {
@@ -346,6 +346,10 @@ export interface GuidingPrinciple extends PrincipleContent {
   versions: VersionEntry<PrincipleContent>[]
   approval: ApprovalRecord | null
   accountableApproverId: ID | null
+  /** Why it matters: the Owner aspirations and project ambitions behind the principle. Supporting rationale, not adopted wording. */
+  whyItMatters?: string
+  /** Emerging design implications: considerations for the team, never prescriptive instructions. */
+  designImplications?: string
   createdBy: ID
 }
 
@@ -515,7 +519,19 @@ export interface Milestone {
   complete: boolean
 }
 
-export const SUGGESTION_KINDS = ['relationship', 'theme', 'question', 'principle_wording', 'driver_measure', 'missing_requirement'] as const
+export const SUGGESTION_KINDS = [
+  'relationship',
+  'theme',
+  'question',
+  'principle_wording',
+  'driver_measure',
+  'missing_requirement',
+  // Thinking-partner observations: questions for the team, never conclusions.
+  'tension',
+  'missing_perspective',
+  'solution_vs_need',
+  'principle_quality',
+] as const
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number]
 
 export interface Suggestion {
@@ -600,6 +616,110 @@ export interface TrashItem {
 }
 
 // ---------------------------------------------------------------------------
+// Compass 2.0 — Understand / Interpret
+// ---------------------------------------------------------------------------
+
+export const HEARD_SECTIONS = ['aspiration', 'theme', 'tension', 'perspective', 'priority'] as const
+export type HeardSection = (typeof HEARD_SECTIONS)[number]
+
+/** A curated, Owner-ready finding in "What We Heard". Interpretation, always linked to evidence where possible. */
+export interface HeardItem {
+  id: ID
+  section: HeardSection
+  title: string
+  narrative: string
+  evidence: NodeRef[]
+  order: number
+  inPresentation: boolean
+  origin: Origin
+  /** Draft until a person on the team has reviewed it. */
+  reviewed: boolean
+  updatedBy: ID
+  updatedAt: ISODate
+}
+
+export interface PovAlternative {
+  id: ID
+  title: string
+  summary: string
+  recommended: boolean
+}
+
+export interface PointOfViewContent {
+  centralAmbition: string
+  opportunity: string
+  connectingIdea: string
+  tensions: string
+  distinctiveness: string
+  keepInMind: string
+  alternatives: PovAlternative[]
+}
+
+/** BSA's strategic interpretation: what we believe. */
+export interface PointOfView extends PointOfViewContent {
+  updatedBy: ID
+  updatedAt: ISODate
+  history: { at: ISODate; by: ID; snapshot: PointOfViewContent }[]
+}
+
+export const OPPORTUNITY_STATES = ['emerging', 'proposed', 'validated'] as const
+export type OpportunityState = (typeof OPPORTUNITY_STATES)[number]
+
+/** A way a principle might influence design thinking. Never a plan, configuration or technical solution. */
+export interface DesignOpportunity {
+  id: ID
+  code: string
+  title: string
+  description: string
+  principleIds: ID[]
+  state: OpportunityState
+  inPresentation: boolean
+  /** Optional link to formal Design Drivers in the advanced register. */
+  linkedDriverIds: ID[]
+  origin: Origin
+  order: number
+  createdBy: ID
+  createdAt: ISODate
+}
+
+export const OUTCOME_CATEGORIES = ['qualitative', 'quantitative', 'experiential', 'operational', 'environmental', 'post_occupancy'] as const
+export type OutcomeCategory = (typeof OUTCOME_CATEGORIES)[number]
+
+export const OUTCOME_STATES = ['emerging', 'proposed_by_bsa', 'validated_with_owner', 'define_later'] as const
+export type OutcomeState = (typeof OUTCOME_STATES)[number]
+
+export const PROGRESS_KINDS = ['design_narrative', 'design_study', 'performance_analysis', 'owner_feedback', 'other'] as const
+export type ProgressKind = (typeof PROGRESS_KINDS)[number]
+
+export interface ProgressEvidence {
+  id: ID
+  date: ISODate
+  kind: ProgressKind
+  note: string
+  addedBy: ID
+}
+
+/** What success could look like. Targets and baselines are deliberately not required. */
+export interface PotentialOutcome {
+  id: ID
+  code: string
+  statement: string
+  principleId: ID
+  opportunityId: ID | null
+  category: OutcomeCategory
+  state: OutcomeState
+  /** True when no reliable measurement method exists yet. */
+  aspiration: boolean
+  /** Possible measures, in words. Optional. */
+  possibleMeasures: string
+  evidenceOfProgress: ProgressEvidence[]
+  inPresentation: boolean
+  order: number
+  createdBy: ID
+  createdAt: ISODate
+}
+
+// ---------------------------------------------------------------------------
 // Aggregate
 // ---------------------------------------------------------------------------
 
@@ -620,6 +740,14 @@ export interface ProjectData {
   suggestions: Suggestion[]
   audit: AuditEvent[]
   workshops: WorkshopSession[]
+  /** Understand: the curated "What We Heard" synthesis. */
+  heard: HeardItem[]
+  /** Interpret: BSA's strategic point of view (one per project). */
+  pointOfView: PointOfView | null
+  /** Interpret: emerging design opportunities (non-prescriptive). */
+  opportunities: DesignOpportunity[]
+  /** Interpret: what success could look like (no targets required). */
+  outcomes: PotentialOutcome[]
   /** Recoverable deletions (supports undo and accidental-deletion recovery). */
   trash: TrashItem[]
   /** Monotonic revision for optimistic concurrency. */

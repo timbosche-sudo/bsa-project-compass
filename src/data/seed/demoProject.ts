@@ -30,6 +30,7 @@ import type {
   VersionEntry,
 } from '@/domain/types'
 import { wordingOf } from '@/domain/wording'
+import { demoHeard, demoOpportunities, demoOutcomes, demoPointOfView, PRINCIPLE_SUPPORT } from './compass2'
 
 export const DEMO_PROJECT_ID = 'demo-pharmacy'
 export const DEMO_PROJECT_2_ID = 'demo-learning'
@@ -460,7 +461,7 @@ export function createDemoProject(): ProjectData {
       location: 'Fictional regional campus',
       description: 'A fictional high-volume specialty pharmacy fulfillment facility used to demonstrate Project Compass. All content is synthetic.',
       owner: { name: ORG, type: 'Regional health system (fictional)', mission: 'Advance health in every community we serve through reliable, compassionate care.' },
-      terminology: { winTheme: 'Win Theme', guidingPrinciple: 'Guiding Principle', designDriver: 'Design Driver', decision: 'Decision' },
+      terminology: { winTheme: 'Vision', guidingPrinciple: 'Guiding Principle', designDriver: 'Design Driver', decision: 'Decision' },
       isDemo: true,
       createdAt: '2026-05-01T12:00:00.000Z',
       members: [
@@ -489,7 +490,7 @@ export function createDemoProject(): ProjectData {
       { id: 'wt-1', code: 'WT-01', statement: 'Every Dose. Every Patient. Every Tomorrow.', narrative: wtHistory[2].snapshot.narrative, status: 'in_review', version: 3, versions: wtHistory, approval: null, createdBy: P.jordan.id },
       { id: 'wt-2', code: 'WT-02', statement: 'Precision at Scale. Care at Heart.', narrative: 'An alternative emphasizing operational precision and the human purpose behind it.', status: 'proposed', version: 1, versions: history([['proposed', { statement: 'Precision at Scale. Care at Heart.', narrative: 'An alternative emphasizing operational precision and the human purpose behind it.' }, 'Created', '2026-07-01T15:00:00.000Z']]), approval: null, createdBy: P.sam.id },
     ],
-    principles,
+    principles: principles.map((p) => ({ ...p, ...PRINCIPLE_SUPPORT[p.id] })),
     drivers,
     decisions,
     milestones: [
@@ -507,6 +508,10 @@ export function createDemoProject(): ProjectData {
       { id: 'c-3', target: { type: 'driver', id: 'dd-7' }, authorId: P.priya.id, body: 'We need to understand the area cost of reaching 75% before DD.', createdAt: '2026-09-18T15:00:00.000Z', resolved: false },
     ],
     suggestions: [],
+    heard: demoHeard(P.jordan.id),
+    pointOfView: demoPointOfView(P.avery.id),
+    opportunities: demoOpportunities(P.jordan.id),
+    outcomes: demoOutcomes(P.jordan.id),
     workshops: [
       {
         id: 'ws-1',
@@ -532,7 +537,7 @@ export function createDemoProject(): ProjectData {
       {
         id: 'ws-2',
         code: 'WS-02',
-        title: 'Owner Alignment Workshop — Win Theme & Principles',
+        title: 'Owner Alignment Workshop — Vision & Principles',
         date: '2026-11-05',
         status: 'planned',
         facilitatorId: P.avery.id,
@@ -619,7 +624,7 @@ export function createEmptyProject(o: {
       location: o.location,
       description: o.description,
       owner: o.owner,
-      terminology: { winTheme: 'Win Theme', guidingPrinciple: 'Guiding Principle', designDriver: 'Design Driver', decision: 'Decision' },
+      terminology: { winTheme: 'Vision', guidingPrinciple: 'Guiding Principle', designDriver: 'Design Driver', decision: 'Decision' },
       isDemo: o.isDemo,
       createdAt: new Date().toISOString(),
       members: [{ personId: o.adminId, role: 'project_admin' }],
@@ -638,6 +643,10 @@ export function createEmptyProject(o: {
     milestones: [],
     comments: [],
     suggestions: [],
+    heard: [],
+    pointOfView: null,
+    opportunities: [],
+    outcomes: [],
     audit: [],
     workshops: [],
     trash: [],

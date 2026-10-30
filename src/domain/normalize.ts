@@ -10,5 +10,9 @@ export function normalizeProjectData(d: ProjectData): ProjectData {
   x.trash ??= []
   x.suggestions ??= []
   x.comments ??= []
+  x.heard ??= []
+  x.pointOfView ??= null
+  x.opportunities ??= []
+  x.outcomes ??= []
   return x
 }

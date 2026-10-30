@@ -1,5 +1,6 @@
 import { driverPrincipleIds } from '@/domain/drivers'
-import { accepted, gapReport, themeStatementIds } from '@/domain/traceability'
+import { CATEGORY_LABELS } from '@/domain/labels'
+import { accepted, evidenceFor, gapReport, themeStatementIds } from '@/domain/traceability'
 import type { ProjectData, Statement } from '@/domain/types'
 import type { AssistProvider, AssistTask, SuggestionOutput } from './types'
 
@@ -27,6 +28,30 @@ function overlap(a: Set<string>, b: Set<string>): string[] {
   return [...a].filter((x) => b.has(x))
 }
 
+/** Expected perspectives for a facility project. A missing perspective is a prompt to ask, not a finding. */
+const PERSPECTIVES: { label: string; pattern: RegExp }[] = [
+  { label: 'Patients, families or caregivers', pattern: /\b(patient|caregiver|family|families|visitor)s?\b/i },
+  { label: 'Community partners or neighbors', pattern: /\b(community|neighbou?r|partner|civic)s?\b/i },
+  { label: 'Frontline staff', pattern: /\b(technician|staff|nurse|pharmacist|operator|worker|frontline|shift)s?\b/i },
+  { label: 'Executive leadership', pattern: /\b(chief|vp|executive|leadership|president|board)\b/i },
+  { label: 'Facilities, operations and maintenance', pattern: /\b(facilit|maintenance|engineer|operations)/i },
+]
+
+/** Phrases that tend to name a solution (an object or intervention) rather than the need behind it. */
+const SOLUTION_LANGUAGE = /\b(we need|we want|give us|there should be|should have|add|install|put in|build)\s+(a|an|more|another|the|some|bigger|separate)\s+([a-z-]+(?:\s+[a-z-]+)?)/i
+
+function dedupe(data: ProjectData, out: SuggestionOutput[]): SuggestionOutput[] {
+  const seen = new Set([
+    ...data.questions.map((q) => q.question),
+    ...data.suggestions.filter((s) => s.status === 'pending').map((s) => s.title),
+  ])
+  return out.filter((s) => !seen.has(String(s.payload.question ?? '')) && !seen.has(s.title))
+}
+
+function words(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length
+}
+
 export class RulesProvider implements AssistProvider {
   readonly id = 'rules-v1'
   readonly label = 'Rule-based assistant (no AI model)'
@@ -42,6 +67,10 @@ export class RulesProvider implements AssistProvider {
         return this.missingRequirements(data)
       case 'validation_questions':
         return this.validationQuestions(data)
+      case 'critical_questions':
+        return dedupe(data, [...this.tensions(data), ...this.missingPerspectives(data), ...this.solutionsVsNeeds(data)])
+      case 'principle_quality':
+        return dedupe(data, this.principleQuality(data))
     }
   }
 
@@ -140,5 +169,130 @@ export class RulesProvider implements AssistProvider {
     }
     const asked = new Set(data.questions.map((q) => q.question))
     return out.filter((s) => !asked.has(String(s.payload.question ?? '')))
+  }
+
+  /** Conflicts already recorded, and critical statements that may be under-weighted because they are rarely mentioned. */
+  private tensions(data: ProjectData): SuggestionOutput[] {
+    const out: SuggestionOutput[] = []
+    const asked = new Set(data.questions.filter((q) => q.status === 'open').flatMap((q) => q.context.map((c) => c.id)))
+    const code = (id: string) => data.statements.find((s) => s.id === id)?.code ?? id
+    for (const c of data.relationships.filter((r) => r.type === 'conflicts_with' && r.status !== 'rejected')) {
+      if (asked.has(c.from.id) && asked.has(c.to.id)) continue
+      out.push({
+        kind: 'tension',
+        title: `Tension between ${code(c.from.id)} and ${code(c.to.id)}`,
+        body: `${c.explanation || 'These statements pull in different directions.'} Make the trade-off explicit with the Owner rather than resolving it silently.`,
+        evidence: [c.from, c.to],
+        target: null,
+        payload: { question: `How should the tension between ${code(c.from.id)} and ${code(c.to.id)} be resolved?` },
+      })
+    }
+    const mentions = new Map<string, number>()
+    for (const r of data.relationships.filter((x) => x.status !== 'rejected' && x.from.type === 'statement' && x.to.type === 'theme')) {
+      const n = themeStatementIds(data, r.to.id).length
+      mentions.set(r.from.id, Math.max(mentions.get(r.from.id) ?? 0, n))
+    }
+    for (const s of data.statements.filter((x) => x.criticality === 'critical' || x.kind === 'nonnegotiable')) {
+      const n = mentions.get(s.id) ?? 0
+      if (n > 1 || asked.has(s.id)) continue
+      out.push({
+        kind: 'tension',
+        title: `${s.code} is critical but rarely mentioned`,
+        body: `“${s.originalText.slice(0, 200)}” is marked ${s.kind === 'nonnegotiable' ? 'non-negotiable' : 'critical'} but ${n === 0 ? 'sits in no theme' : 'is the only statement in its theme'}. Frequency is not importance — confirm it carries the right weight.`,
+        evidence: [{ type: 'statement', id: s.id }],
+        target: null,
+        payload: { question: `Is ${s.code} given enough weight in the vision and principles, given how rarely it is mentioned?` },
+      })
+    }
+    return out
+  }
+
+  private missingPerspectives(data: ProjectData): SuggestionOutput[] {
+    const out: SuggestionOutput[] = []
+    const voices = data.statements.map((s) => s.speaker)
+    for (const p of PERSPECTIVES) {
+      if (voices.some((v) => p.pattern.test(v))) continue
+      out.push({
+        kind: 'missing_perspective',
+        title: `No statements attributed to: ${p.label}`,
+        body: 'This may be appropriate for the project, or it may be a gap. Silence is not agreement — consider whether to seek this perspective before presenting.',
+        evidence: [],
+        target: null,
+        payload: { question: `Should we seek input from ${p.label.toLowerCase()} before the next Owner conversation?` },
+      })
+    }
+    const bySpeaker = new Map<string, string[]>()
+    data.statements.forEach((s) => bySpeaker.set(s.speaker || 'Unattributed', [...(bySpeaker.get(s.speaker || 'Unattributed') ?? []), s.id]))
+    const total = data.statements.length
+    for (const [speaker, ids] of bySpeaker) {
+      if (total >= 8 && ids.length / total > 0.4) {
+        out.push({
+          kind: 'missing_perspective',
+          title: `One voice dominates the evidence: ${speaker}`,
+          body: `${ids.length} of ${total} statements come from a single attribution. Check that the direction is not shaped by one perspective.`,
+          evidence: ids.slice(0, 20).map((id) => ({ type: 'statement' as const, id })),
+          target: null,
+          payload: { question: `Are we over-relying on ${speaker}? Whose view would balance it?` },
+        })
+      }
+    }
+    return out
+  }
+
+  private solutionsVsNeeds(data: ProjectData): SuggestionOutput[] {
+    const out: SuggestionOutput[] = []
+    for (const s of data.statements) {
+      const m = SOLUTION_LANGUAGE.exec(s.originalText)
+      if (!m) continue
+      const thing = `${m[2]} ${m[3]}`.toLowerCase()
+      out.push({
+        kind: 'solution_vs_need',
+        title: `${s.code} may describe a solution (“${thing}”)`,
+        body: `“${s.originalText.slice(0, 200)}” names a specific answer. Ask what need it serves — other design responses may meet the need better.`,
+        evidence: [{ type: 'statement', id: s.id }],
+        target: null,
+        payload: { question: `What underlying need is behind ${s.code} (“${thing}”)?` },
+      })
+    }
+    return out
+  }
+
+  private principleQuality(data: ProjectData): SuggestionOutput[] {
+    const out: SuggestionOutput[] = []
+    const live = data.principles.filter((p) => p.status !== 'superseded' && p.status !== 'not_adopted')
+    const kw = new Map(live.map((p) => [p.id, keywords(`${p.title} ${p.statement}`)]))
+    const q = (title: string, body: string, ids: string[], question: string): SuggestionOutput => ({
+      kind: 'principle_quality',
+      title,
+      body,
+      evidence: ids.map((id) => ({ type: 'principle' as const, id })),
+      target: ids.length === 1 ? { type: 'principle', id: ids[0] } : null,
+      payload: { question },
+    })
+    for (let i = 0; i < live.length; i++) {
+      for (let j = i + 1; j < live.length; j++) {
+        const a = kw.get(live[i].id)!
+        const b = kw.get(live[j].id)!
+        const shared = overlap(a, b)
+        const jaccard = shared.length / (new Set([...a, ...b]).size || 1)
+        if (shared.length >= 3 && jaccard >= 0.25) {
+          out.push(q(`${live[i].code} and ${live[j].code} may overlap`, `They share: ${shared.slice(0, 6).join(', ')}. Distinct principles are easier to apply — consider whether these should merge or sharpen.`, [live[i].id, live[j].id], `Are ${live[i].code} and ${live[j].code} distinct enough?`))
+        }
+      }
+    }
+    for (const p of live) {
+      const n = evidenceFor(data, { type: 'principle', id: p.id }).all.length
+      if (n === 0) out.push(q(`${p.code} is not grounded in evidence`, 'No accepted source statement supports this principle, directly or through a theme. Link evidence or confirm it is a BSA proposition.', [p.id], `What evidence supports ${p.code}?`))
+      else if (n === 1) out.push(q(`${p.code} rests on a single statement`, 'One source can be enough, but confirm it reflects a shared view.', [p.id], `Is ${p.code} a shared view, or one voice?`))
+      const w = words(p.statement)
+      if (w > 40) out.push(q(`${p.code} statement is long (${w} words)`, 'Owners remember short principles. Consider moving detail into “Why it matters”.', [p.id], `Can ${p.code} be said more simply?`))
+      if (w > 0 && w < 6) out.push(q(`${p.code} statement may be too brief to guide design`, 'A very short statement can be hard to apply consistently.', [p.id], `What does ${p.code} ask the design to do?`))
+    }
+    const present = new Set(live.map((p) => p.category))
+    const missing = (['facility_outcomes', 'delivery_excellence', 'institutional_impact'] as const).filter((c) => !present.has(c))
+    if (live.length >= 3 && missing.length) {
+      out.push(q(`No principles address ${missing.map((c) => CATEGORY_LABELS[c]).join(', ')}`, 'This may be intentional. If not, the framework may be unbalanced.', [], `Should the framework address ${missing.map((c) => CATEGORY_LABELS[c].toLowerCase()).join(' and ')}?`))
+    }
+    return out
   }
 }

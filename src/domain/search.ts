@@ -21,6 +21,8 @@ export function searchIndex(data: ProjectData): SearchHit[] {
     ...data.themes.map((t) => hit('theme', t.id, t.code, t.title, t.summary)),
     ...data.sources.map((s) => hit('source', s.id, s.code, s.title, `${s.author} ${s.organization}`)),
     ...data.statements.map((s) => hit('statement', s.id, s.code, s.originalText, s.interpretation)),
+    ...data.opportunities.map((o) => hit('opportunity', o.id, o.code, o.title, o.description)),
+    ...data.outcomes.map((o) => hit('outcome', o.id, o.code, o.statement, o.possibleMeasures)),
   ]
 }
 

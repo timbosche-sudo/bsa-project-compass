@@ -1,5 +1,10 @@
 import { z } from 'zod'
 import {
+  HEARD_SECTIONS,
+  OPPORTUNITY_STATES,
+  OUTCOME_CATEGORIES,
+  OUTCOME_STATES,
+  PROGRESS_KINDS,
   ALLOWED_MIME_TYPES,
   type AllowedMimeType,
   CONFIDENCE,
@@ -187,6 +192,44 @@ export const terminologySchema = z.object({
   decision: requiredShort,
 })
 
+const heardInputSchema = z.object({
+  section: z.enum(HEARD_SECTIONS),
+  title: requiredShort,
+  narrative: longText,
+  evidence: z.array(nodeRefSchema).max(60),
+  inPresentation: z.boolean(),
+})
+
+export const povContentSchema = z.object({
+  centralAmbition: longText,
+  opportunity: longText,
+  connectingIdea: longText,
+  tensions: longText,
+  distinctiveness: longText,
+  keepInMind: longText,
+  alternatives: z.array(z.object({ id, title: requiredShort, summary: longText, recommended: z.boolean() })).max(8),
+})
+
+export const opportunityInputSchema = z.object({
+  title: requiredShort,
+  description: longText,
+  principleIds: z.array(id).max(20),
+  state: z.enum(OPPORTUNITY_STATES),
+  inPresentation: z.boolean(),
+  linkedDriverIds: z.array(id).max(30),
+})
+
+export const outcomeInputSchema = z.object({
+  statement: z.string().trim().min(1, 'Required').max(600),
+  principleId: id,
+  opportunityId: id.nullable(),
+  category: z.enum(OUTCOME_CATEGORIES),
+  state: z.enum(OUTCOME_STATES),
+  aspiration: z.boolean(),
+  possibleMeasures: longText,
+  inPresentation: z.boolean(),
+})
+
 const attendeeSchema = z.object({ name: requiredShort, organization: shortText, role: shortText })
 
 const suggestionInputSchema = z.object({
@@ -336,6 +379,22 @@ export const commandSchema = z.discriminatedUnion('type', [
     milestone: z.object({ id: id.optional(), name: requiredShort, date: isoDate, phase: z.enum(PHASES), driverIds: z.array(id), complete: z.boolean() }),
   }),
   cmd('milestone.delete', { id }),
+  // Understand: What We Heard
+  cmd('heard.create', { item: heardInputSchema }),
+  cmd('heard.update', { id, patch: heardInputSchema.partial().extend({ reviewed: z.boolean().optional() }) }),
+  cmd('heard.delete', { id }),
+  cmd('heard.reorder', { orderedIds: z.array(id).max(300) }),
+  // Interpret
+  cmd('pov.update', { content: povContentSchema, coalesce: z.boolean().optional() }),
+  cmd('principle.updateSupport', { id, whyItMatters: longText.optional(), designImplications: longText.optional() }),
+  cmd('opportunity.create', { content: opportunityInputSchema }),
+  cmd('opportunity.update', { id, patch: opportunityInputSchema.partial() }),
+  cmd('opportunity.delete', { id }),
+  cmd('outcome.create', { content: outcomeInputSchema }),
+  cmd('outcome.update', { id, patch: outcomeInputSchema.partial() }),
+  cmd('outcome.delete', { id }),
+  cmd('outcome.addProgress', { id, date: isoDate, kind: z.enum(PROGRESS_KINDS), note: z.string().trim().min(1, 'Describe the evidence').max(2000) }),
+  cmd('outcome.removeProgress', { id, progressId: id }),
   // Owner alignment workshops
   cmd('workshop.create', { title: requiredShort, date: isoDate, attendees: z.array(attendeeSchema).max(60) }),
   cmd('workshop.update', {

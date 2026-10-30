@@ -6,6 +6,11 @@ import type {
   DecisionStatus,
   DriverStatus,
   ExtractionStatus,
+  HeardSection,
+  OpportunityState,
+  OutcomeCategory,
+  OutcomeState,
+  ProgressKind,
   NodeType,
   Phase,
   PrincipleCategory,
@@ -157,6 +162,46 @@ export const NODE_TYPE_LABELS: Record<NodeType, string> = {
   principle: 'Guiding Principle',
   driver: 'Design Driver',
   decision: 'Decision',
+  opportunity: 'Design Opportunity',
+  outcome: 'Potential Outcome',
+}
+
+export const HEARD_SECTION_LABELS: Record<HeardSection, string> = {
+  aspiration: 'Key aspirations',
+  theme: 'Recurring themes',
+  tension: 'Critical tensions',
+  perspective: 'Stakeholder perspectives',
+  priority: 'Emerging priorities',
+}
+
+export const OPPORTUNITY_STATE_LABELS: Record<OpportunityState, string> = {
+  emerging: 'Emerging idea',
+  proposed: 'Proposed by BSA',
+  validated: 'Validated with Owner',
+}
+
+export const OUTCOME_CATEGORY_LABELS: Record<OutcomeCategory, string> = {
+  qualitative: 'Qualitative',
+  quantitative: 'Quantitative',
+  experiential: 'Experiential',
+  operational: 'Operational',
+  environmental: 'Environmental',
+  post_occupancy: 'Post-occupancy',
+}
+
+export const OUTCOME_STATE_LABELS: Record<OutcomeState, string> = {
+  emerging: 'Emerging idea',
+  proposed_by_bsa: 'Proposed by BSA',
+  validated_with_owner: 'Validated with Owner',
+  define_later: 'To be defined later',
+}
+
+export const PROGRESS_KIND_LABELS: Record<ProgressKind, string> = {
+  design_narrative: 'Design narrative',
+  design_study: 'Design study',
+  performance_analysis: 'Performance analysis',
+  owner_feedback: 'Owner feedback',
+  other: 'Other',
 }
 
 export function labelOf<T extends string>(map: Record<T, string>, key: T | null | undefined, fallback = '—'): string {

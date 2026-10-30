@@ -145,14 +145,14 @@ async function createProject(body: unknown, me: Person & { isSystemAdmin: boolea
       location: '',
       description: '',
       owner: { name: String(b.ownerName).slice(0, 200), type: '', mission: '' },
-      terminology: { winTheme: 'Win Theme', guidingPrinciple: 'Guiding Principle', designDriver: 'Design Driver', decision: 'Decision' },
+      terminology: { winTheme: 'Vision', guidingPrinciple: 'Guiding Principle', designDriver: 'Design Driver', decision: 'Decision' },
       isDemo: false,
       createdAt: now(),
       members: [{ personId: me.id, role: 'project_admin' }],
       aiPolicy: { enabled: false, allowedClassifications: ['public'] },
     },
     people: [{ id: me.id, name: me.name, title: me.title, organization: me.organization, email: me.email }],
-    sources: [], statements: [], relationships: [], themes: [], questions: [], winThemes: [], principles: [], drivers: [], decisions: [], milestones: [], comments: [], suggestions: [], audit: [], workshops: [], trash: [],
+    sources: [], statements: [], relationships: [], themes: [], questions: [], winThemes: [], principles: [], drivers: [], decisions: [], milestones: [], comments: [], suggestions: [], heard: [], pointOfView: null, opportunities: [], outcomes: [], audit: [], workshops: [], trash: [],
     revision: 1,
   }
   await store.createProject(data, me.organization)
@@ -176,6 +176,8 @@ const TASK_INSTRUCTIONS: Record<AssistTask, string> = {
   suggest_themes: 'Group statements that are not yet in a theme into candidate themes. Name each candidate neutrally.',
   find_missing_requirements: 'Identify requirement or non-negotiable statements not reflected by any theme, principle or driver.',
   validation_questions: 'Recommend validation questions for drivers lacking targets, baselines, owners or evidence.',
+  critical_questions: 'Raise critical questions as kind "question": unresolved tensions between statements, stakeholder perspectives that appear absent, and statements that describe a solution rather than the underlying need. Do not resolve tensions yourself.',
+  principle_quality: 'Review principles for distinctness, grounding in cited statements, balance across categories and clarity. Respond with kind "question" only; never rewrite principle wording.',
 }
 
 export function buildAssistInput(state: ProjectData, allowed: Set<Confidentiality>) {

@@ -97,6 +97,20 @@ const REQUIRED: Record<CommandType, Capability> = {
   'framework.delete': 'framework.edit',
   'framework.undelete': 'framework.edit',
   'principle.merge': 'framework.edit',
+  'heard.create': 'theme.edit',
+  'heard.update': 'theme.edit',
+  'heard.delete': 'theme.edit',
+  'heard.reorder': 'theme.edit',
+  'pov.update': 'framework.edit',
+  'principle.updateSupport': 'framework.edit',
+  'opportunity.create': 'framework.edit',
+  'opportunity.update': 'framework.edit',
+  'opportunity.delete': 'framework.edit',
+  'outcome.create': 'framework.edit',
+  'outcome.update': 'framework.edit',
+  'outcome.delete': 'framework.edit',
+  'outcome.addProgress': 'driver.recordMeasurement',
+  'outcome.removeProgress': 'framework.edit',
   'workshop.create': 'workshop.facilitate',
   'workshop.update': 'workshop.facilitate',
   'workshop.setNote': 'workshop.facilitate',
@@ -668,7 +682,11 @@ const handlers: Handlers = {
     d.relationships = d.relationships.filter((r) => !rels.includes(r))
     d.comments = d.comments.filter((cm) => !comments.includes(cm))
     if (c.kind === 'winTheme') d.winThemes = d.winThemes.filter((w) => w.id !== e.id)
-    else d.principles = d.principles.filter((p) => p.id !== e.id)
+    else {
+      d.principles = d.principles.filter((p) => p.id !== e.id)
+      // Opportunities keep their other principles; outcomes keep their reference so undelete restores them.
+      d.opportunities.forEach((o) => (o.principleIds = o.principleIds.filter((pid) => pid !== e.id)))
+    }
     const trashId = newId()
     d.trash.push({ id: trashId, kind: c.kind, entity: e, relationships: rels, comments, deletedBy: x.actorId, deletedAt: x.now })
     return { summary: `Deleted ${e.code} (recoverable)`, target: null, createdId: trashId }
@@ -700,6 +718,12 @@ const handlers: Handlers = {
         if (!sameRef(fromSide, toSide)) addRelationship(d, x, fromSide, toSide, r.type, { explanation: r.explanation, confidence: r.confidence, origin: r.origin, accepted: r.status === 'accepted', proposedBy: r.proposedBy })
       }
       removeRelationshipsTouching(d, fromRef)
+      d.opportunities.forEach((o) => {
+        if (o.principleIds.includes(f.id)) o.principleIds = [...new Set(o.principleIds.map((pid) => (pid === f.id ? into.id : pid)))]
+      })
+      d.outcomes.forEach((o) => {
+        if (o.principleId === f.id) o.principleId = into.id
+      })
       f.status = 'superseded'
       pushVersion<PrincipleContent, ApprovalStatus>(f, principleContent(f), 'superseded', x, `Merged into ${into.code}`)
     }
@@ -1016,6 +1040,16 @@ const handlers: Handlers = {
         handlers['principle.edit'](d, { type: 'principle.edit', id: pr.id, content: { ...principleContent(pr), statement: String(p.statement) }, note: `Accepted ${s.origin} wording suggestion` }, x)
         break
       }
+      case 'tension':
+      case 'missing_perspective':
+      case 'solution_vs_need': {
+        // Accepting a thinking-partner observation records it as an open question for the team.
+        createdId = handlers['question.create'](d, { type: 'question.create', question: String(p.question ?? s.title).slice(0, 1000), context: s.evidence.slice(0, 20) }, x).createdId
+        break
+      }
+      case 'principle_quality':
+        // Acknowledged by the team; never changes principle wording.
+        break
       case 'driver_measure': {
         if (!s.target) throw new DomainError('Suggestion has no target driver.')
         handlers['comment.add'](d, { type: 'comment.add', target: s.target, body: `Accepted suggestion for follow-up — ${s.title}: ${s.body}` }, x)
@@ -1032,6 +1066,112 @@ const handlers: Handlers = {
     s.reviewedBy = x.actorId
     return { summary: `Dismissed suggestion: ${s.title}`, target: s.target }
   },
+  // ---------------- Understand: What We Heard ----------------
+  'heard.create': (d, c, x) => {
+    c.item.evidence.forEach((r) => {
+      if (!nodeExists(d, r)) throw new DomainError('Evidence reference not found in this project.')
+    })
+    const id = newId()
+    const order = d.heard.filter((h) => h.section === c.item.section).reduce((m, h) => Math.max(m, h.order), 0) + 1
+    d.heard.push({ id, ...c.item, order, origin: 'human', reviewed: true, updatedBy: x.actorId, updatedAt: x.now })
+    return { summary: `Added to What We Heard: "${c.item.title}"`, createdId: id }
+  },
+  'heard.update': (d, c, x) => {
+    const h = find(d.heard, c.id, 'What We Heard item')
+    c.patch.evidence?.forEach((r) => {
+      if (!nodeExists(d, r)) throw new DomainError('Evidence reference not found in this project.')
+    })
+    Object.assign(h, c.patch)
+    h.updatedBy = x.actorId
+    h.updatedAt = x.now
+    return { summary: `Updated What We Heard: "${h.title}"` }
+  },
+  'heard.delete': (d, c) => {
+    const h = find(d.heard, c.id, 'What We Heard item')
+    d.heard = d.heard.filter((x) => x.id !== h.id)
+    return { summary: `Removed from What We Heard: "${h.title}"` }
+  },
+  'heard.reorder': (d, c) => {
+    c.orderedIds.forEach((id, i) => (find(d.heard, id, 'What We Heard item').order = i + 1))
+    return { summary: 'Reordered What We Heard' }
+  },
+
+  // ---------------- Interpret ----------------
+  'pov.update': (d, c, x) => {
+    if (c.content.alternatives.filter((a) => a.recommended).length > 1) throw new DomainError('Recommend one direction at a time.')
+    const prev = d.pointOfView
+    const last = prev?.history.at(-1)
+    const amend = c.coalesce && prev && last && last.by === x.actorId && Date.parse(x.now) - Date.parse(last.at) < COALESCE_MS
+    const history = prev?.history ?? []
+    if (amend) history[history.length - 1] = { at: x.now, by: x.actorId, snapshot: structuredClone(c.content) }
+    else history.push({ at: x.now, by: x.actorId, snapshot: structuredClone(c.content) })
+    d.pointOfView = { ...structuredClone(c.content), updatedBy: x.actorId, updatedAt: x.now, history: history.slice(-50) }
+    return { summary: 'Updated the strategic point of view' }
+  },
+  'principle.updateSupport': (d, c) => {
+    const p = find(d.principles, c.id, 'Guiding Principle')
+    if (c.whyItMatters !== undefined) p.whyItMatters = c.whyItMatters
+    if (c.designImplications !== undefined) p.designImplications = c.designImplications
+    return { summary: `Updated supporting rationale for ${p.code}`, target: ref('principle', p.id) }
+  },
+  'opportunity.create': (d, c, x) => {
+    c.content.principleIds.forEach((pid) => find(d.principles, pid, 'Guiding Principle'))
+    c.content.linkedDriverIds.forEach((did) => find(d.drivers, did, 'Design Driver'))
+    const id = newId()
+    const code = nextCode('DO', d.opportunities.map((o) => o.code))
+    const order = d.opportunities.reduce((m, o) => Math.max(m, o.order), 0) + 1
+    d.opportunities.push({ id, code, ...c.content, origin: 'human', order, createdBy: x.actorId, createdAt: x.now })
+    return { summary: `Added design opportunity ${code} "${c.content.title}"`, target: ref('opportunity', id), createdId: id }
+  },
+  'opportunity.update': (d, c) => {
+    const o = find(d.opportunities, c.id, 'Design opportunity')
+    c.patch.principleIds?.forEach((pid) => find(d.principles, pid, 'Guiding Principle'))
+    c.patch.linkedDriverIds?.forEach((did) => find(d.drivers, did, 'Design Driver'))
+    Object.assign(o, c.patch)
+    return { summary: `Updated design opportunity ${o.code}`, target: ref('opportunity', o.id) }
+  },
+  'opportunity.delete': (d, c) => {
+    const o = find(d.opportunities, c.id, 'Design opportunity')
+    removeRelationshipsTouching(d, ref('opportunity', o.id))
+    d.outcomes.forEach((oc) => {
+      if (oc.opportunityId === o.id) oc.opportunityId = null
+    })
+    d.opportunities = d.opportunities.filter((x) => x.id !== o.id)
+    return { summary: `Removed design opportunity ${o.code} "${o.title}"` }
+  },
+  'outcome.create': (d, c, x) => {
+    find(d.principles, c.content.principleId, 'Guiding Principle')
+    if (c.content.opportunityId) find(d.opportunities, c.content.opportunityId, 'Design opportunity')
+    const id = newId()
+    const code = nextCode('PO', d.outcomes.map((o) => o.code))
+    const order = d.outcomes.reduce((m, o) => Math.max(m, o.order), 0) + 1
+    d.outcomes.push({ id, code, ...c.content, evidenceOfProgress: [], order, createdBy: x.actorId, createdAt: x.now })
+    return { summary: `Added potential outcome ${code}`, target: ref('outcome', id), createdId: id }
+  },
+  'outcome.update': (d, c) => {
+    const o = find(d.outcomes, c.id, 'Potential outcome')
+    if (c.patch.principleId) find(d.principles, c.patch.principleId, 'Guiding Principle')
+    if (c.patch.opportunityId) find(d.opportunities, c.patch.opportunityId, 'Design opportunity')
+    Object.assign(o, c.patch)
+    return { summary: `Updated potential outcome ${o.code}`, target: ref('outcome', o.id) }
+  },
+  'outcome.delete': (d, c) => {
+    const o = find(d.outcomes, c.id, 'Potential outcome')
+    removeRelationshipsTouching(d, ref('outcome', o.id))
+    d.outcomes = d.outcomes.filter((x) => x.id !== o.id)
+    return { summary: `Removed potential outcome ${o.code}` }
+  },
+  'outcome.addProgress': (d, c, x) => {
+    const o = find(d.outcomes, c.id, 'Potential outcome')
+    o.evidenceOfProgress.push({ id: newId(), date: c.date, kind: c.kind, note: c.note, addedBy: x.actorId })
+    return { summary: `Recorded evidence of progress for ${o.code}`, target: ref('outcome', o.id) }
+  },
+  'outcome.removeProgress': (d, c) => {
+    const o = find(d.outcomes, c.id, 'Potential outcome')
+    o.evidenceOfProgress = o.evidenceOfProgress.filter((e) => e.id !== c.progressId)
+    return { summary: `Removed evidence of progress from ${o.code}`, target: ref('outcome', o.id) }
+  },
+
   // ---------------- Owner alignment workshops ----------------
   'workshop.create': (d, c, x) => {
     const id = newId()

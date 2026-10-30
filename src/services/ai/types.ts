@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { nodeRefSchema } from '@/domain/schemas'
 import { SUGGESTION_KINDS, type ProjectData } from '@/domain/types'
 
-export const ASSIST_TASKS = ['suggest_relationships', 'suggest_themes', 'find_missing_requirements', 'validation_questions'] as const
+export const ASSIST_TASKS = ['suggest_relationships', 'suggest_themes', 'find_missing_requirements', 'validation_questions', 'critical_questions', 'principle_quality'] as const
 export type AssistTask = (typeof ASSIST_TASKS)[number]
 
 export const ASSIST_TASK_LABELS: Record<AssistTask, string> = {
@@ -10,6 +10,8 @@ export const ASSIST_TASK_LABELS: Record<AssistTask, string> = {
   suggest_themes: 'Suggest thematic groupings',
   find_missing_requirements: 'Find requirements missing from the framework',
   validation_questions: 'Recommend validation questions',
+  critical_questions: 'Raise critical questions (tensions, missing voices, solutions vs needs)',
+  principle_quality: 'Review principle quality (distinct, grounded, balanced, clear)',
 }
 
 /** Structured output contract. Anything a provider returns is validated before it can be persisted. */
