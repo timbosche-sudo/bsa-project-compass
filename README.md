@@ -25,7 +25,7 @@ Project Compass is a structured project-alignment and decision-support platform 
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [Known limitations](#known-limitations)
-- Further documentation: [Owner Workshop Mode](docs/WORKSHOP_MODE.md) · [Architecture & implementation plan](docs/ARCHITECTURE.md) · [Security](docs/SECURITY.md) · [Deployment](docs/DEPLOYMENT.md)
+- Further documentation: [BSA brand integration](docs/BRAND.md) · [Owner Workshop Mode](docs/WORKSHOP_MODE.md) · [Architecture & implementation plan](docs/ARCHITECTURE.md) · [Security](docs/SECURITY.md) · [Deployment](docs/DEPLOYMENT.md)
 
 ## Quick start
 
@@ -150,6 +150,15 @@ See [docs/SECURITY.md](docs/SECURITY.md) for the threat model and controls, and 
 
 ## Deployment
 
+### Publish the updated demo (GitHub Pages)
+
+1. One-time setup: in GitHub open **Settings → Pages**, and under *Build and deployment* set **Source: GitHub Actions**.
+2. Open the **Actions** tab, choose **Deploy static demo**, click **Run workflow**, and select the branch to publish (for example `claude/project-compass-v1`, or `main` after merging).
+3. When the run finishes, the demo is at `https://<owner>.github.io/bsa-project-compass/` (the URL is shown on the run summary). The workflow builds in demo mode only, with synthetic data.
+4. To check locally before publishing: `npm ci && VITE_BASE_PATH=/bsa-project-compass/ npm run build && npx vite preview --base /bsa-project-compass/`.
+
+If the repository is private, GitHub Pages requires a plan that supports Pages for private repositories, and the published site may still be public. Use only synthetic data. For an access-controlled demo, deploy the same `dist/` folder to the organization's private static hosting instead (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
+
 - **Local preview:** `npm run build && npm run preview`.
 - **Static demonstration:** `.github/workflows/deploy-demo.yml` publishes the *demo-mode* build to GitHub Pages, and only when triggered manually. A public static site is **not** a secure backend and must only ever serve synthetic data.
 - **Secure application:** host privately (for example, behind the organization's SSO-protected app hosting, or Azure Static Web Apps or Cloudflare Access with Entra ID) and connect it to the Supabase backend. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
@@ -160,6 +169,6 @@ See [docs/SECURITY.md](docs/SECURITY.md) for the threat model and controls, and 
 - **Real file uploads.** In remote mode the API issues signed upload and download URLs, but the browser upload step and document text extraction (PDF, PPTX, DOCX, OCR) are not yet implemented. Statements are entered manually.
 - **AI.** The server-side Anthropic adapter is implemented and tested with a fake client, but it has not been called against the live API. Demo mode uses the rule-based assistant only, and the AI tasks are limited to linking, theming, gap and question suggestions. Narrative drafting is not implemented.
 - **Concurrency.** The project aggregate uses optimistic concurrency, so simultaneous edits produce a refresh-and-retry conflict rather than a merge. Very large projects may later need normalized tables.
-- **Branding.** No official BSA design-system files were provided. The tokens in `src/styles/index.css` are placeholders ready for replacement, and exports use standard fonts.
+- **Branding.** The app follows the BSA Brand Style Guide 2026 and the official logo (see [docs/BRAND.md](docs/BRAND.md)). A few items await confirmation by the Visual Brand Manager: the logo red value, on-screen minimum logo sizes and the product-family naming.
 - **Demo storage.** Data is per-browser and can be cleared. Handwritten-note images are synthetic SVG illustrations.
 - **Accessibility.** Keyboard navigation, ARIA tabs, labelled controls and an accessible list alternative to the graph are implemented. A formal WCAG audit has not been performed.

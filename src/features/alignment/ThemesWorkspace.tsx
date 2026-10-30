@@ -233,7 +233,7 @@ function ThemeCard({ theme, focused, unsupported }: { theme: Theme; focused: boo
       </ul>
       <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-3">
         {principle ? (
-          <Link to={`/projects/${data.project.id}/vision?principle=${principle.id}`} className="flex items-center gap-1 text-[13px] font-medium text-accent-strong hover:underline">
+          <Link to={`/projects/${data.project.id}/vision?principle=${principle.id}`} className="flex items-center gap-1 text-[13px] font-medium text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-ink">
             Promoted to {principle.code} {principle.title} <ArrowUpRight className="size-3.5" />
           </Link>
         ) : (

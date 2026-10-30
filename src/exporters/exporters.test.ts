@@ -39,7 +39,8 @@ describe('exporters', () => {
     expect(reportReadiness(d).final).toBe(true)
   })
 
-  it('normalizes characters for standard PDF fonts', () => {
-    expect(clean('“Every Dose” — ≥ 75%')).toBe('"Every Dose" - >= 75%')
+  it('keeps typographic characters available in the embedded Lato subset and drops others', () => {
+    expect(clean('“Every Dose” — ≥ 75% · ok')).toBe('“Every Dose” — ≥ 75% · ok')
+    expect(clean('Emoji 🚀 and ✓ removed')).toBe('Emoji  and  removed')
   })
 })

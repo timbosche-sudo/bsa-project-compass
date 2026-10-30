@@ -1,33 +1,36 @@
 import { jsPDF } from 'jspdf'
 import { autoTable, type UserOptions } from 'jspdf-autotable'
+import { BSA, BSA_PRINT_MARGIN_PT, BSA_TYPE, rgb } from '@/brand/brand'
+import { BSA_LOGO_ASPECT } from '@/brand/logo'
 import { evaluateCba } from '@/domain/cba'
 import { decisionDriverIds, driverPrincipleIds, driverStatus, principleDriverIds } from '@/domain/drivers'
 import { CATEGORY_LABELS, DECISION_STATUS_LABELS, DRIVER_STATUS_LABELS, PHASE_LABELS, SECTOR_LABELS } from '@/domain/labels'
 import { dashboardModel } from '@/domain/metrics'
 import { evidenceFor, gapReport } from '@/domain/traceability'
 import type { Decision, ProjectData } from '@/domain/types'
+import { brandLogo, registerLato } from './brandAssets'
 import { downloadBlob, exportFilename, provenanceLines, reportReadiness } from './common'
 import { isActiveFramework } from '@/domain/wording'
 
-/** jsPDF's standard fonts are WinAnsi; normalize typographic characters. */
+/**
+ * Keep only characters present in the embedded Lato subset (Latin-1 plus
+ * typographic quotes, dashes, bullet, ellipsis, arrows and comparison signs).
+ */
 export function clean(s: string | null | undefined): string {
-  return (s ?? '')
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/[—–]/g, '-')
-    .replace(/→/g, '->')
-    .replace(/≥/g, '>=')
-    .replace(/≤/g, '<=')
-    .replace(/…/g, '...')
-    .replace(/·/g, '-')
-    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, '')
+  return (s ?? '').replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF\u2013\u2014\u2018-\u201D\u2022\u2026\u2192\u2264\u2265]/g, '')
 }
 
-const INK: [number, number, number] = [11, 13, 15]
-const ACCENT: [number, number, number] = [11, 143, 161]
-const MUTED: [number, number, number] = [98, 104, 111]
-const M = 48
+type RGB = [number, number, number]
+const INK = rgb(BSA.black)
+const MUTED = rgb(BSA.black80)
+const LINE = rgb(BSA.black10)
+const RED = rgb(BSA.red)
+/** Brand red for warnings in documents. */
+export const PDF_WARN: RGB = RED
+const M = BSA_PRINT_MARGIN_PT // 0.625in
+const FOOTER = 34
 
+/** BSA document (Brand Style Guide 2026, pp. 24–28): Lato, 0.625in margins, 1pt black division lines. */
 class Doc {
   pdf = new jsPDF({ unit: 'pt', format: 'letter' })
   y = M
@@ -40,60 +43,70 @@ class Doc {
   ) {}
 
   ensure(space: number) {
-    if (this.y + space > this.h - 60) {
+    if (this.y + space > this.h - M - FOOTER) {
       this.pdf.addPage()
       this.y = M
     }
   }
-  heading(text: string, size = 15) {
-    this.ensure(40)
-    this.y += 10
-    this.pdf.setFont('helvetica', 'bold').setFontSize(size).setTextColor(...INK)
-    this.pdf.text(clean(text), M, this.y)
-    this.y += 6
-    this.pdf.setDrawColor(...ACCENT).setLineWidth(1.2).line(M, this.y, M + 36, this.y)
-    this.y += 16
+  rule(weight = 1) {
+    this.pdf.setDrawColor(...INK).setLineWidth(weight).line(M, this.y, this.w - M, this.y)
   }
+  /** Section heading: Lato Black 18/21.6, then a 1pt black division line. */
+  heading(text: string) {
+    const t = BSA_TYPE.headline
+    this.ensure(70)
+    this.y += 16
+    this.pdf.setFont('Lato', 'bold').setFontSize(t.size).setTextColor(...INK)
+    this.pdf.text(clean(text), M, this.y)
+    this.y += 9
+    this.rule()
+    this.y += 20
+  }
+  /** ALL CAPS label: Lato Black with 100 tracking. */
   eyebrow(text: string) {
     this.ensure(18)
-    this.pdf.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...MUTED)
-    this.pdf.text(clean(text).toUpperCase(), M, this.y)
-    this.y += 12
+    this.pdf.setFont('Lato', 'bold').setFontSize(8).setTextColor(...INK)
+    this.pdf.text(clean(text).toUpperCase(), M, this.y, { charSpace: 0.8 })
+    this.y += 13
   }
-  para(text: string, opts: { size?: number; color?: [number, number, number]; bold?: boolean; italic?: boolean } = {}) {
-    const size = opts.size ?? 10
-    this.pdf.setFont('helvetica', opts.bold ? 'bold' : opts.italic ? 'italic' : 'normal').setFontSize(size).setTextColor(...(opts.color ?? INK))
+  /** Body: Lato Regular 10/15. */
+  para(text: string, opts: { size?: number; color?: RGB; bold?: boolean; italic?: boolean } = {}) {
+    const size = opts.size ?? BSA_TYPE.body.size
+    const leading = size * 1.5
+    this.pdf.setFont('Lato', opts.bold ? 'bold' : opts.italic ? 'italic' : 'normal').setFontSize(size).setTextColor(...(opts.color ?? INK))
     const lines = this.pdf.splitTextToSize(clean(text), this.w - M * 2) as string[]
-    // Large text needs extra leading above its first baseline.
     if (size > 10) this.y += size - 10
     for (const line of lines) {
-      this.ensure(size * 1.4)
+      this.ensure(leading)
       this.pdf.text(line, M, this.y)
-      this.y += size * 1.4
+      this.y += leading
     }
     this.y += 4
   }
   table(opts: UserOptions) {
     autoTable(this.pdf, {
       startY: this.y,
-      margin: { left: M, right: M, bottom: 60 },
-      styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 4, textColor: INK, lineColor: [226, 226, 222], lineWidth: 0.5, overflow: 'linebreak' },
-      headStyles: { fillColor: [238, 238, 235], textColor: INK, fontStyle: 'bold' },
+      margin: { left: M, right: M, top: M, bottom: M + FOOTER },
+      styles: { font: 'Lato', fontSize: 8.5, cellPadding: 4.5, textColor: INK, lineColor: LINE, lineWidth: 0.5, overflow: 'linebreak' },
+      headStyles: { fillColor: rgb(BSA.grey20), textColor: INK, fontStyle: 'bold', lineColor: INK },
       ...opts,
       body: (opts.body ?? []).map((row) => (row as unknown[]).map((c) => (typeof c === 'string' ? clean(c) : c))) as UserOptions['body'],
     })
-    this.y = ((this.pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY ?? this.y) + 18
+    this.y = ((this.pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY ?? this.y) + 20
   }
+  /** Footer per page: document title left; "BSA | n" right, as in BSA documents. */
   finish(): Blob {
     const n = this.pdf.getNumberOfPages()
     for (let i = 1; i <= n; i++) {
       this.pdf.setPage(i)
-      this.pdf.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-      this.pdf.text(clean(`BSA Project Compass - ${this.data.project.name} - ${this.title}`), M, this.h - 30)
-      this.pdf.text(`Page ${i} of ${n}`, this.w - M, this.h - 30, { align: 'right' })
+      const fy = this.h - M + 6
+      this.pdf.setDrawColor(...INK).setLineWidth(0.5).line(M, fy - 14, this.w - M, fy - 14)
+      this.pdf.setFont('Lato', 'normal').setFontSize(7.5).setTextColor(...MUTED)
+      this.pdf.text(clean(`Project Compass  |  ${this.data.project.name}  |  ${this.title}`), M, fy)
+      this.pdf.setTextColor(...INK).text(`BSA  |  ${i}`, this.w - M, fy, { align: 'right' })
       if (this.data.project.isDemo) {
-        this.pdf.setFont('helvetica', 'bold').setTextColor(184, 58, 20)
-        this.pdf.text('SYNTHETIC DEMONSTRATION DATA - NOT A REAL PROJECT', this.w / 2, this.h - 18, { align: 'center' })
+        this.pdf.setFont('Lato', 'bold').setFontSize(7).setTextColor(...INK)
+        this.pdf.text('SYNTHETIC DEMONSTRATION DATA  —  NOT A REAL PROJECT', this.w / 2, fy + 12, { align: 'center', charSpace: 0.5 })
       }
     }
     return this.pdf.output('blob')
@@ -102,25 +115,52 @@ class Doc {
 
 const draftTag = (status: string) => (status === 'approved' ? 'APPROVED' : `DRAFT - ${status.replace('_', ' ').toUpperCase()}`)
 
-function cover(doc: Doc, data: ProjectData, title: string) {
+/**
+ * Cover: centered red-box logo touching the top edge (the preferred public
+ * red-box variation, p. 13), Cover Title (Lato Black 36/40) and Cover Subhead
+ * (Lato Regular 20). The logo is 0.5in tall (minimum print size, p. 15).
+ */
+async function cover(doc: Doc, data: ProjectData, title: string) {
   const p = data.project
-  doc.pdf.setFillColor(...INK).rect(0, 0, doc.w, 210, 'F')
-  doc.pdf.setFont('helvetica', 'bold').setFontSize(9).setTextColor(34, 195, 214)
-  doc.pdf.text('BSA PROJECT COMPASS', M, 60)
-  doc.pdf.setTextColor(255, 255, 255).setFontSize(24)
-  doc.pdf.text(doc.pdf.splitTextToSize(clean(title), doc.w - 2 * M) as string[], M, 100)
-  doc.pdf.setFont('helvetica', 'normal').setFontSize(11)
-  doc.pdf.text(clean(`${p.name} (${p.code})`), M, 150)
-  doc.pdf.setFontSize(9).setTextColor(200, 200, 200)
-  doc.pdf.text(clean(`${p.owner.name} - ${SECTOR_LABELS[p.sector]} - ${PHASE_LABELS[p.phase]}`), M, 168)
-  doc.y = 240
+  const logoH = 36 // 0.5in
+  const logoW = logoH * BSA_LOGO_ASPECT
+  const boxW = logoW + logoH * 1.6
+  const boxH = logoH * 2.2
+  doc.pdf.setFillColor(...RED).rect((doc.w - boxW) / 2, 0, boxW, boxH, 'F')
+  doc.pdf.addImage(await brandLogo('white'), 'PNG', (doc.w - logoW) / 2, (boxH - logoH) / 2, logoW, logoH)
+
+  let y = 250
+  doc.pdf.setFont('Lato', 'bold').setFontSize(9).setTextColor(...INK)
+  doc.pdf.text('PROJECT COMPASS', M, y, { charSpace: 0.9 })
+  y += 34
+  doc.pdf.setFont('Lato', 'bold').setFontSize(BSA_TYPE.coverTitle.size)
+  const lines = doc.pdf.splitTextToSize(clean(title), doc.w - 2 * M) as string[]
+  doc.pdf.text(lines, M, y, { lineHeightFactor: BSA_TYPE.coverTitle.leading / BSA_TYPE.coverTitle.size })
+  y += lines.length * BSA_TYPE.coverTitle.leading + 6
+  doc.pdf.setFont('Lato', 'normal').setFontSize(BSA_TYPE.coverSubhead.size)
+  doc.pdf.text(clean(p.name), M, y)
+  y += 22
+  doc.pdf.setFontSize(11).setTextColor(...MUTED)
+  doc.pdf.text(clean(`${p.owner.name}  |  ${SECTOR_LABELS[p.sector]}  |  ${PHASE_LABELS[p.phase]}`), M, y)
+  doc.y = y + 26
+  doc.rule()
+  doc.y += 18
   provenanceLines(data).forEach((l) => doc.para(l, { size: 8.5, color: MUTED }))
+  doc.pdf.addPage()
+  doc.y = M
+}
+
+/** A branded report document with cover and footer, for other exporters to fill. */
+export async function createReport(data: ProjectData, title: string) {
+  const doc = new Doc(data, title)
+  await registerLato(doc.pdf)
+  await cover(doc, data, title)
+  return doc
 }
 
 export async function alignmentReportPdf(data: ProjectData) {
   const title = reportReadiness(data).final ? 'Project Alignment Report' : 'Project Alignment Report - DRAFT'
-  const doc = new Doc(data, title)
-  cover(doc, data, title)
+  const doc = await createReport(data, title)
   const m = dashboardModel(data)
   const gaps = gapReport(data)
   const p = data.project
@@ -183,10 +223,10 @@ export async function alignmentReportPdf(data: ProjectData) {
   for (const pr of [...data.principles].filter((x) => isActiveFramework(x.status)).sort((a, b) => a.order - b.order)) {
     const ev = evidenceFor(data, { type: 'principle', id: pr.id })
     doc.eyebrow(`${pr.code} ${pr.title} - ${ev.all.length} supporting statement(s)`)
-    if (!ev.all.length) doc.para('No supporting evidence recorded - unsupported.', { italic: true, color: [184, 58, 20] })
+    if (!ev.all.length) doc.para('No supporting evidence recorded - unsupported.', { italic: true, color: PDF_WARN })
     ev.all.slice(0, 4).forEach((s) => {
       const src = data.sources.find((x) => x.id === s.sourceId)
-      doc.para(`"${s.originalText}" - ${s.code}, ${src?.code ?? ''} ${src?.title ?? ''}`, { size: 9, color: [47, 52, 58] })
+      doc.para(`"${s.originalText}" - ${s.code}, ${src?.code ?? ''} ${src?.title ?? ''}`, { size: 9, color: MUTED })
     })
   }
 
@@ -226,8 +266,7 @@ export async function alignmentReportPdf(data: ProjectData) {
 }
 
 export async function decisionRecordPdf(data: ProjectData, dec: Decision) {
-  const doc = new Doc(data, `Decision Record ${dec.code}`)
-  cover(doc, data, `Decision Record ${dec.code}`)
+  const doc = await createReport(data, `Decision Record ${dec.code}`)
   const ev = evaluateCba(dec)
   const name = (id: string | null | undefined) => data.people.find((x) => x.id === id)?.name ?? 'Unknown'
   const alt = (id: string | undefined) => dec.alternatives.find((a) => a.id === id)?.name ?? ''
@@ -260,7 +299,7 @@ export async function decisionRecordPdf(data: ProjectData, dec: Decision) {
     if (f.importanceRationale) doc.para(`Rationale: ${f.importanceRationale}`, { size: 9 })
   }
   doc.table({ head: [['Alternative', 'Total importance of advantages', 'Cost']], body: dec.alternatives.map((a) => [a.name, ev.eligible[a.id] ? String(ev.totals[a.id]) : 'Excluded', a.cost === null ? 'Unknown' : `$${a.cost.toLocaleString()}`]) })
-  if (!ev.complete) doc.para(`Evaluation incomplete: ${ev.issues.filter((i) => i.severity === 'blocking').length} open item(s).`, { color: [184, 58, 20] })
+  if (!ev.complete) doc.para(`Evaluation incomplete: ${ev.issues.filter((i) => i.severity === 'blocking').length} open item(s).`, { color: PDF_WARN })
 
   doc.heading('Recommendation and approval')
   doc.para(dec.recommendation ? `Recommended: ${alt(dec.recommendation.alternativeId)} - by ${name(dec.recommendation.by)}, ${dec.recommendation.at.slice(0, 10)}. ${dec.recommendation.rationale}` : 'No recommendation recorded.')
@@ -270,12 +309,4 @@ export async function decisionRecordPdf(data: ProjectData, dec: Decision) {
   doc.table({ head: [['Date', 'By', 'Action', 'Note']], body: dec.history.map((h) => [h.at.slice(0, 10), name(h.by), h.action, h.note]) })
 
   downloadBlob(doc.finish(), exportFilename(data, `decision-${dec.code}`, 'pdf'))
-}
-
-
-/** A branded report document with cover and footer, for other exporters to fill. */
-export function createReport(data: ProjectData, title: string) {
-  const doc = new Doc(data, title)
-  cover(doc, data, title)
-  return doc
 }

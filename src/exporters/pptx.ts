@@ -3,14 +3,22 @@ import { decisionDriverIds, driverPrincipleIds, driverStatus } from '@/domain/dr
 import { DECISION_STATUS_LABELS, DRIVER_STATUS_LABELS, PHASE_LABELS, SECTOR_LABELS } from '@/domain/labels'
 import { dashboardModel } from '@/domain/metrics'
 import type { ProjectData } from '@/domain/types'
+import { BSA } from '@/brand/brand'
+import { BSA_LOGO_ASPECT } from '@/brand/logo'
+import { brandLogo } from './brandAssets'
 import { downloadBlob, exportFilename, reportReadiness } from './common'
 import { isActiveFramework } from '@/domain/wording'
 
-const INK = '0B0D0F'
-const ACCENT = '0B8FA1'
-const MUTED = '62686F'
-const LINE = 'E2E2DE'
-const FONT = 'Arial'
+// BSA Brand Style Guide 2026: Lato (Black for headlines), black/white text, red/teal accents.
+const INK = BSA.black.slice(1)
+const MUTED = BSA.black80.slice(1)
+const LINE = BSA.black10.slice(1)
+const GREY20 = BSA.grey20.slice(1)
+const RED = BSA.red.slice(1)
+const FONT = 'Lato'
+const HEAD = 'Lato Black'
+const LOGO_H = 0.5 // in — minimum logo size (p. 15)
+const LOGO_W = LOGO_H * BSA_LOGO_ASPECT
 
 /**
  * Project Alignment Presentation. Contains only recorded project content —
@@ -25,33 +33,43 @@ export async function alignmentDeck(data: ProjectData) {
   const p = data.project
   const t = p.terminology
   const m = dashboardModel(data)
-  const footer = `${p.name} · BSA Project Compass${p.isDemo ? ' · SYNTHETIC DEMONSTRATION DATA' : ''}`
+  const footer = `${p.name}  |  Project Compass${p.isDemo ? '  |  SYNTHETIC DEMONSTRATION DATA' : ''}`
+  const redLogo = await brandLogo('red')
+  const whiteLogo = await brandLogo('white')
 
+  // Content slides: white background, red logo bottom-left with clear space, 1pt black division line.
   pptx.defineSlideMaster({
     title: 'COMPASS',
     background: { color: 'FFFFFF' },
     objects: [
-      { rect: { x: 0.6, y: 0.55, w: 0.5, h: 0.05, fill: { color: ACCENT } } },
-      { text: { text: footer, options: { x: 0.6, y: 7.0, w: 10, h: 0.3, fontFace: FONT, fontSize: 9, color: p.isDemo ? 'B83A14' : MUTED } } },
+      { line: { x: 0.6, y: 1.05, w: 12.13, h: 0, line: { color: INK, width: 1 } } },
+      { image: { data: redLogo, x: 0.6, y: 6.6, w: LOGO_W, h: LOGO_H } },
+      { text: { text: footer, options: { x: 3.6, y: 6.85, w: 8.3, h: 0.3, fontFace: FONT, fontSize: 9, color: MUTED, align: 'right' } } },
     ],
-    slideNumber: { x: 12.3, y: 7.0, fontFace: FONT, fontSize: 9, color: MUTED },
+    slideNumber: { x: 12.1, y: 6.85, w: 0.6, fontFace: FONT, fontSize: 9, color: INK, align: 'right' },
   })
   const slide = (eyebrow: string, title: string) => {
     const s = pptx.addSlide({ masterName: 'COMPASS' })
-    s.addText(eyebrow.toUpperCase(), { x: 0.6, y: 0.7, w: 12, h: 0.3, fontFace: FONT, fontSize: 10, bold: true, color: MUTED, charSpacing: 2 })
-    s.addText(title, { x: 0.6, y: 1.0, w: 12, h: 0.7, fontFace: FONT, fontSize: 28, bold: true, color: INK })
+    s.addText(eyebrow.toUpperCase(), { x: 0.6, y: 0.62, w: 12, h: 0.35, fontFace: HEAD, fontSize: 11, color: INK, charSpacing: 1.1 })
+    s.addText(title, { x: 0.6, y: 1.2, w: 12, h: 0.75, fontFace: HEAD, fontSize: 28, color: INK })
     return s
   }
   const draft = (status: string) => (status === 'approved' ? '' : `  [DRAFT — ${status.replace('_', ' ')}]`)
 
   // 1. Title
+  // Title: black background; centered red-box logo touching the top edge (p. 13).
   const title = pptx.addSlide()
   title.background = { color: INK }
-  title.addText('BSA PROJECT COMPASS', { x: 0.8, y: 0.8, w: 8, h: 0.4, fontFace: FONT, fontSize: 12, bold: true, color: '22C3D6', charSpacing: 3 })
-  title.addText(p.name, { x: 0.8, y: 2.4, w: 11.5, h: 1.2, fontFace: FONT, fontSize: 40, bold: true, color: 'FFFFFF' })
-  title.addText(reportReadiness(data).final ? 'Project Alignment' : 'Project Alignment — DRAFT', { x: 0.8, y: 3.6, w: 11, h: 0.6, fontFace: FONT, fontSize: 22, color: 'CCCCCC' })
-  title.addText(`${p.owner.name} · ${SECTOR_LABELS[p.sector]} · ${PHASE_LABELS[p.phase]} · ${new Date().toISOString().slice(0, 10)}`, { x: 0.8, y: 5.6, w: 11, h: 0.4, fontFace: FONT, fontSize: 12, color: 'AAAAAA' })
-  if (p.isDemo) title.addText('SYNTHETIC DEMONSTRATION DATA — FICTIONAL PROJECT', { x: 0.8, y: 6.4, w: 11, h: 0.4, fontFace: FONT, fontSize: 11, bold: true, color: 'F0875F' })
+  const boxW = LOGO_W * 1.9
+  const boxH = LOGO_H * 2.6
+  title.addShape(pptx.ShapeType.rect, { x: (13.333 - boxW) / 2, y: 0, w: boxW, h: boxH, fill: { color: RED }, line: { color: RED } })
+  title.addImage({ data: whiteLogo, x: (13.333 - LOGO_W * 1.2) / 2, y: (boxH - LOGO_H * 1.2) / 2, w: LOGO_W * 1.2, h: LOGO_H * 1.2 })
+  title.addText(p.owner.name.toUpperCase(), { x: 0.8, y: 2.9, w: 11.73, h: 0.4, fontFace: FONT, fontSize: 13, color: 'FFFFFF', align: 'center', charSpacing: 1.3 })
+  title.addText(p.name, { x: 0.8, y: 3.35, w: 11.73, h: 1.3, fontFace: HEAD, fontSize: 40, color: 'FFFFFF', align: 'center' })
+  title.addShape(pptx.ShapeType.line, { x: 6.17, y: 4.85, w: 1.0, h: 0, line: { color: 'FFFFFF', width: 1 } })
+  title.addText(reportReadiness(data).final ? 'PROJECT ALIGNMENT' : 'PROJECT ALIGNMENT — DRAFT', { x: 0.8, y: 5.0, w: 11.73, h: 0.5, fontFace: HEAD, fontSize: 18, color: 'FFFFFF', align: 'center', charSpacing: 1.8 })
+  title.addText(`${SECTOR_LABELS[p.sector]}  |  ${PHASE_LABELS[p.phase]}  |  ${new Date().toISOString().slice(0, 10)}`, { x: 0.8, y: 5.55, w: 11.73, h: 0.4, fontFace: FONT, fontSize: 12, color: 'CCCCCC', align: 'center' })
+  if (p.isDemo) title.addText('SYNTHETIC DEMONSTRATION DATA — FICTIONAL PROJECT', { x: 0.8, y: 6.8, w: 11.73, h: 0.35, fontFace: HEAD, fontSize: 10, color: 'FFFFFF', align: 'center', charSpacing: 1 })
 
   // 2. Institutional context
   const ctx = slide('Institutional context', p.owner.name)
@@ -67,10 +85,12 @@ export async function alignmentDeck(data: ProjectData) {
   const wt = wts.find((w) => w.status === 'approved') ?? wts[0]
   const w = pptx.addSlide()
   w.background = { color: INK }
-  w.addText(t.winTheme.toUpperCase() + (wt ? draft(wt.status) : ''), { x: 0.8, y: 0.8, w: 11, h: 0.4, fontFace: FONT, fontSize: 12, bold: true, color: '22C3D6', charSpacing: 2 })
-  w.addText(wt?.statement ?? 'Not yet defined', { x: 0.8, y: 2.0, w: 11.7, h: 2.2, fontFace: FONT, fontSize: 44, bold: true, color: 'FFFFFF' })
-  if (wt?.narrative) w.addText(wt.narrative, { x: 0.8, y: 4.4, w: 11, h: 1.6, fontFace: FONT, fontSize: 15, color: 'CCCCCC', valign: 'top' })
-  w.addText(footer, { x: 0.8, y: 7.0, w: 11, h: 0.3, fontFace: FONT, fontSize: 9, color: '888888' })
+  w.addText(t.winTheme.toUpperCase() + (wt ? draft(wt.status) : ''), { x: 0.6, y: 0.62, w: 12, h: 0.35, fontFace: HEAD, fontSize: 11, color: 'FFFFFF', charSpacing: 1.1 })
+  w.addShape(pptx.ShapeType.line, { x: 0.6, y: 1.05, w: 12.13, h: 0, line: { color: 'FFFFFF', width: 1 } })
+  w.addText(wt?.statement ?? 'Not yet defined', { x: 0.6, y: 1.7, w: 12, h: 2.4, fontFace: HEAD, fontSize: 46, color: 'FFFFFF', valign: 'top' })
+  if (wt?.narrative) w.addText(wt.narrative, { x: 0.6, y: 4.3, w: 10.5, h: 1.6, fontFace: FONT, fontSize: 16, color: 'CCCCCC', valign: 'top' })
+  w.addImage({ data: whiteLogo, x: 0.6, y: 6.6, w: LOGO_W, h: LOGO_H })
+  w.addText(footer, { x: 3.6, y: 6.85, w: 9.13, h: 0.3, fontFace: FONT, fontSize: 9, color: 'CCCCCC', align: 'right' })
 
   // 5. Guiding Principles
   const gp = slide('Guiding principles', `${t.guidingPrinciple}s`)
@@ -79,11 +99,11 @@ export async function alignmentDeck(data: ProjectData) {
   principles.slice(0, 9).forEach((x, i) => {
     const cx = 0.6 + (i % cols) * 4.1
     const cy = 1.9 + Math.floor(i / cols) * 1.65
-    gp.addShape(pptx.ShapeType.rect, { x: cx, y: cy, w: 3.9, h: 1.5, fill: { color: 'F5F5F3' }, line: { color: LINE } })
+    gp.addShape(pptx.ShapeType.rect, { x: cx, y: cy, w: 3.9, h: 1.5, fill: { color: GREY20 }, line: { color: LINE } })
     gp.addText(
       [
-        { text: `${x.code}${draft(x.status)}\n`, options: { fontSize: 9, color: x.status === 'approved' ? ACCENT : 'B83A14', bold: true } },
-        { text: `${x.title}\n`, options: { fontSize: 15, bold: true, color: INK } },
+        { text: `${x.code}${draft(x.status)}\n`, options: { fontSize: 9, color: INK, bold: true } },
+        { text: `${x.title}\n`, options: { fontFace: HEAD, fontSize: 15, color: INK } },
         { text: x.statement, options: { fontSize: 9.5, color: MUTED } },
       ],
       { x: cx + 0.15, y: cy + 0.08, w: 3.6, h: 1.35, fontFace: FONT, valign: 'top' },
@@ -95,7 +115,7 @@ export async function alignmentDeck(data: ProjectData) {
   const drivers = data.drivers.filter((d) => d.approvalStatus !== 'superseded')
   const priority = [...drivers.filter((d) => d.requirementClass === 'owner_mandatory'), ...drivers.filter((d) => d.requirementClass !== 'owner_mandatory' && d.performanceStatus === 'at_risk')].slice(0, 8)
   const pd = slide('Priority design drivers', `Owner-mandatory and at-risk ${t.designDriver.toLowerCase()}s`)
-  const head = (cells: string[]) => cells.map((c) => ({ text: c, options: { bold: true, fill: { color: 'EEEEEB' }, color: INK } }))
+  const head = (cells: string[]) => cells.map((c) => ({ text: c, options: { fontFace: HEAD, fill: { color: GREY20 }, color: INK } }))
   pd.addTable(
     [
       head(['ID', t.designDriver, 'Principles', 'Status', 'Accountable']),

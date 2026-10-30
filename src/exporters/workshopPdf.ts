@@ -9,7 +9,7 @@ export async function meetingSummaryPdf(data: ProjectData, sessionId: string) {
   const w = s.session
   const person = (id: string) => data.people.find((p) => p.id === id)?.name ?? 'Unknown'
   const title = `Workshop Summary ${w.code}${s.draft ? ' - DRAFT' : ''}`
-  const doc = createReport(data, title)
+  const doc = await createReport(data, title)
 
   doc.heading('Session')
   doc.table({

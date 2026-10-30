@@ -90,7 +90,7 @@ export function VersionHistory<C>({
     <ol className="relative space-y-0 border-l border-line pl-5">
       {[...versions].reverse().map((v) => (
         <li key={v.version} className="relative pb-4">
-          <span className={cx('absolute top-1.5 -left-[25px] size-2.5 rounded-full border-2 border-surface', v.status === 'approved' ? 'bg-ok' : v.version === current ? 'bg-accent' : 'bg-line-strong')} />
+          <span className={cx('absolute top-1.5 -left-[25px] size-2.5 rounded-full border-2 border-surface', v.status === 'approved' ? 'bg-ok-fill' : v.version === current ? 'bg-accent' : 'bg-line-strong')} />
           <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
             <span className="font-mono font-semibold text-ink">v{v.version}</span>
             <Badge tone={v.status === 'approved' ? 'ok' : 'outline'}>{label(v.status)}</Badge>

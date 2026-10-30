@@ -14,12 +14,12 @@ import { isActiveFramework } from '@/domain/wording'
 /** Status → token. Status hues are reserved for state and always paired with a text label. */
 const STATUS_FILL: Record<DriverStatus, string> = {
   proposed: 'bg-line-strong',
-  under_review: 'bg-info',
+  under_review: 'bg-info-fill',
   approved: 'bg-accent/50',
   in_progress: 'bg-accent',
-  at_risk: 'bg-risk',
-  verified: 'bg-ok',
-  not_achieved: 'bg-danger',
+  at_risk: 'bg-risk-fill',
+  verified: 'bg-ok-fill',
+  not_achieved: 'bg-danger-fill',
   superseded: 'bg-faint/40',
 }
 

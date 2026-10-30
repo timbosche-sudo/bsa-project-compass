@@ -51,7 +51,7 @@ test('review statuses and recording the Owner’s approval of the exact wording'
   await expect(dlg.getByRole('button', { name: 'Record approval' })).toBeDisabled()
   await dlg.getByRole('checkbox').check()
   await dlg.getByRole('button', { name: 'Record approval' }).click()
-  await expect(page.getByTestId('slide-stage')).toContainText('Adopted wording · approved by Dr. Morgan Ellery')
+  await expect(page.getByTestId('slide-stage')).toContainText(/Adopted wording\s*approved by Dr. Morgan Ellery/i)
   // Approved wording is protected: no inline editor until a revision is started.
   await expect(page.getByRole('textbox', { name: 'GP-03 Statement' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Revise wording' }).click()

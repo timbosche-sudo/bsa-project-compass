@@ -1,0 +1,53 @@
+/*
+ * BSA brand primitives — source: BSA Brand Style Guide 2026 (pp. 19–25).
+ * Framework-agnostic CSS custom properties intended to be shared by every
+ * BSA Intelligence application. Applications map these primitives to their
+ * own semantic tokens; components should not reference primitives directly.
+ */
+:root {
+  /* Primary palette (p. 20) */
+  --bsa-red: #cc1b2d; /* Pantone 3517 C */
+  --bsa-white: #ffffff;
+  --bsa-teal: #56b1bf;
+  --bsa-grey: #9ea09f; /* Pantone Cool Gray 7 */
+  --bsa-black: #000000;
+
+  /* Approved black tones (p. 20) — the only greys permitted */
+  --bsa-black-80: #58595b;
+  --bsa-black-50: #939598;
+  --bsa-black-25: #c7c8ca;
+  --bsa-black-10: #e6e7e8;
+
+  /* Approved background screens (p. 20): 20% grey, 20% teal */
+  --bsa-grey-20: #ecedec;
+  --bsa-teal-20: #ddeff2;
+
+  /* White screens over black (p. 23) — used for dark appearance surfaces */
+  --bsa-white-10-on-black: #1a1a1a;
+  --bsa-white-25-on-black: #404040;
+  --bsa-white-50-on-black: #808080;
+  --bsa-white-80-on-black: #cccccc;
+
+  /* Secondary palette (p. 21) — accents in lesser proportion */
+  --bsa-purple: #782076;
+  --bsa-navy: #2f496e;
+  --bsa-dark-teal: #3a7f8a;
+  --bsa-light-blue: #507cba;
+  --bsa-green: #2bb673;
+  --bsa-yellow: #fdba63;
+  /* From the BSA standard color library (p. 43) */
+  --bsa-salmon: #de8f70;
+
+  /* Typography (pp. 24–25) */
+  --bsa-font: 'Lato', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bsa-weight-regular: 400;
+  --bsa-weight-bold: 700;
+  --bsa-weight-black: 900;
+  /* ALL CAPS titles: 100 tracking */
+  --bsa-caps-tracking: 0.1em;
+
+  /* Layout (p. 26): margins 0.625in, gutters 0.375in, 1pt black division lines */
+  --bsa-print-margin: 0.625in;
+  --bsa-print-gutter: 0.375in;
+  --bsa-division: 1px solid var(--bsa-black);
+}

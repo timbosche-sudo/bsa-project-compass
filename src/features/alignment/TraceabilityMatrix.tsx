@@ -106,7 +106,7 @@ export function TraceabilityMatrix() {
                         <Link to={nodePath(data.project.id, { type: 'statement', id: r.statementId })} className="font-mono text-[11px] text-muted hover:text-ink">
                           {r.statementCode}
                         </Link>
-                        <span className="text-ink">“{r.statementText}”</span>
+                        <span className="quote">“{r.statementText}”</span>
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1 pl-12">
                         <KindBadge kind={r.kind} />

@@ -33,7 +33,7 @@ import { Badge, Button, cx, IconButton } from '@/components/ui'
 import { APPROVAL_LABELS } from '@/domain/labels'
 import type { ApprovalStatus, GuidingPrinciple, WinTheme } from '@/domain/types'
 import { liveSession, type FrameworkKind } from '@/domain/workshop'
-import { BrandMark } from '@/layout/AppShell'
+import { BsaLogo } from '@/brand/BsaLogo'
 import { ApproveDialog, MergeDialog } from './dialogs'
 import { FacilitatorPanel } from './FacilitatorPanel'
 import { buildSlides, Slide, SlideStage, type DeckOptions, type SlideDef } from './Slides'
@@ -296,7 +296,7 @@ function Workshop() {
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 lg:px-4">
         <Link to={`/projects/${data.project.id}/vision`} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted hover:bg-sunken hover:text-ink" aria-label="Back to Vision & Principles">
           <ArrowLeft className="size-4" />
-          <BrandMark size={22} />
+          <BsaLogo height={26} clearSpace={false} className="mx-2" />
         </Link>
         <div className="min-w-0">
           <div className="truncate text-[14px] font-semibold">Owner Alignment Workshop</div>
@@ -322,7 +322,7 @@ function Workshop() {
           </label>
           <Button size="sm" variant="ghost" icon={<ExternalLink className="size-3.5" />} onClick={openAudience} title="Open a separate audience window (e.g. for a second display)">
             <span className="hidden lg:inline">Audience window</span>
-            {audience && <span className="size-1.5 rounded-full bg-ok" aria-label="connected" />}
+            {audience && <span className="size-1.5 rounded-full bg-ok-fill" aria-label="connected" />}
           </Button>
           <IconButton label={panel ? 'Hide facilitator panel (N)' : 'Show facilitator panel (N)'} onClick={() => setPanel((x) => !x)}>
             {panel ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
@@ -506,7 +506,7 @@ function SlideRail({ slides, current, onSelect, onAddPrinciple, onAddWinTheme, o
                   <span className={cx('line-clamp-2 text-[12.5px] leading-snug', s.kind === 'title' || s.kind === 'overview' || s.kind === 'summary' ? 'font-semibold' : '')}>{s.label}</span>
                   {st && (
                     <span className={cx('mt-0.5 flex items-center gap-1 text-[10.5px]', s.key === current ? 'opacity-75' : 'text-muted')}>
-                      <span className={cx('size-1.5 rounded-full', { approved: 'bg-ok', in_review: 'bg-info', needs_refinement: 'bg-warn', not_adopted: 'bg-danger', proposed: 'bg-line-strong', superseded: 'bg-faint' }[st])} />
+                      <span className={cx('size-1.5 rounded-full', { approved: 'bg-ok-fill', in_review: 'bg-info-fill', needs_refinement: 'bg-warn-fill', not_adopted: 'bg-danger-fill', proposed: 'bg-line-strong', superseded: 'bg-faint' }[st])} />
                       {APPROVAL_LABELS[st]}
                     </span>
                   )}

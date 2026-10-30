@@ -1,91 +1,126 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/inter';
-@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource/lato/400.css';
+@import '@fontsource/lato/400-italic.css';
+@import '@fontsource/lato/700.css';
+@import '@fontsource/lato/900.css';
+@import '../brand/bsa-tokens.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * BSA Project Compass design tokens.
- * Replace values here (not in components) when official BSA design-system
- * files are provided. Components reference semantic names only.
+ * Project Compass semantic tokens, mapped to BSA brand primitives
+ * (src/brand/bsa-tokens.css, from the BSA Brand Style Guide 2026).
+ * Components reference semantic names only.
+ *
+ *  - Backgrounds: white, 20% grey, 20% teal or black only.
+ *  - Text: black or white. Greys only from the approved black tones.
+ *  - Teal text is reserved for quotations (stakeholder statements).
+ *  - Status fills use the secondary palette; status *text* uses the same hue
+ *    multiplied by an approved black screen so it meets WCAG AA contrast.
  */
 :root {
-  --c-canvas: #f5f5f3;
-  --c-surface: #ffffff;
-  --c-raised: #ffffff;
-  --c-sunken: #eeeeeb;
-  --c-ink: #0b0d0f;
-  --c-ink-2: #2f343a;
-  --c-muted: #62686f;
-  --c-faint: #8d9298;
-  --c-line: #e2e2de;
-  --c-line-strong: #c8c8c3;
-  --c-accent: #0b8fa1;
-  --c-accent-strong: #08707e;
-  --c-accent-soft: #e2f4f6;
-  --c-on-accent: #ffffff;
-  --c-inverse: #0b0d0f;
-  --c-on-inverse: #f5f5f3;
+  --c-canvas: var(--bsa-white);
+  --c-surface: var(--bsa-white);
+  --c-raised: var(--bsa-white);
+  --c-sunken: var(--bsa-grey-20);
+  --c-ink: var(--bsa-black);
+  --c-ink-2: var(--bsa-black);
+  --c-muted: var(--bsa-black-80);
+  --c-faint: var(--bsa-black-50);
+  --c-line: var(--bsa-black-10);
+  --c-line-strong: var(--bsa-black-25);
+  --c-rule: var(--bsa-black);
+  --c-accent: var(--bsa-teal);
+  --c-accent-strong: var(--bsa-dark-teal);
+  --c-accent-soft: var(--bsa-teal-20);
+  --c-on-accent: var(--bsa-black);
+  --c-inverse: var(--bsa-black);
+  --c-on-inverse: var(--bsa-white);
+  --c-brand: var(--bsa-red);
+  /* Quotations (teal text, Lato Black). Dark teal on white for AA contrast. */
+  --c-quote: var(--bsa-dark-teal);
 
-  --c-ok: #1d7a50;
-  --c-ok-soft: #e3f3ea;
-  --c-warn: #9a6200;
-  --c-warn-soft: #fbf0d9;
-  --c-risk: #b83a14;
-  --c-risk-soft: #fbe6de;
-  --c-danger: #b3261e;
-  --c-danger-soft: #fae3e1;
-  --c-info: #2a5bd7;
-  --c-info-soft: #e5ecfb;
-  --c-ai: #6b46c1;
-  --c-ai-soft: #efe9fb;
-  --c-neutral-soft: #ececea;
+  --c-ok: #165b3a; /* green × 50% black */
+  --c-ok-fill: var(--bsa-green);
+  --c-ok-soft: #d5f0e3; /* green 20% screen */
+  --c-warn: #7f5d32; /* yellow × 50% black */
+  --c-warn-fill: var(--bsa-yellow);
+  --c-warn-soft: #fff1e0;
+  --c-risk: #6f4838; /* salmon × 50% black */
+  --c-risk-fill: var(--bsa-salmon);
+  --c-risk-soft: #f8e9e2;
+  --c-danger: var(--bsa-red);
+  --c-danger-fill: var(--bsa-red);
+  --c-danger-soft: #f5d1d5;
+  --c-info: #406395; /* light blue × 80% */
+  --c-info-fill: var(--bsa-light-blue);
+  --c-info-soft: #dce5f1;
+  --c-ai: var(--bsa-purple);
+  --c-ai-fill: var(--bsa-purple);
+  --c-ai-soft: #e4d2e4;
+  --c-neutral-soft: var(--bsa-grey-20);
 
-  --shadow-card: 0 1px 0 rgb(11 13 15 / 0.04), 0 1px 2px rgb(11 13 15 / 0.04);
-  --shadow-pop: 0 12px 40px -8px rgb(11 13 15 / 0.22), 0 2px 6px rgb(11 13 15 / 0.08);
+  --shadow-card: none;
+  --shadow-pop: 0 12px 40px -8px rgb(0 0 0 / 0.25), 0 2px 6px rgb(0 0 0 / 0.08);
   color-scheme: light;
 }
 
 .dark {
-  --c-canvas: #0a0c0d;
-  --c-surface: #121517;
-  --c-raised: #171b1e;
-  --c-sunken: #0e1012;
-  --c-ink: #f1f2f2;
-  --c-ink-2: #cdd1d4;
-  --c-muted: #9aa1a7;
-  --c-faint: #6f767c;
-  --c-line: #23282c;
-  --c-line-strong: #343a3f;
-  --c-accent: #2cc4d6;
-  --c-accent-strong: #5fd6e4;
-  --c-accent-soft: #0f2a2e;
-  --c-on-accent: #04191c;
-  --c-inverse: #f1f2f2;
-  --c-on-inverse: #0b0d0f;
+  --c-canvas: var(--bsa-black);
+  --c-surface: var(--bsa-black);
+  --c-raised: var(--bsa-white-10-on-black);
+  --c-sunken: var(--bsa-white-10-on-black);
+  --c-ink: var(--bsa-white);
+  --c-ink-2: var(--bsa-white);
+  --c-muted: var(--bsa-white-80-on-black);
+  --c-faint: var(--bsa-white-50-on-black);
+  --c-line: var(--bsa-white-25-on-black);
+  --c-line-strong: var(--bsa-white-50-on-black);
+  --c-rule: var(--bsa-white);
+  --c-accent: var(--bsa-teal);
+  --c-accent-strong: var(--bsa-teal);
+  --c-accent-soft: #112326; /* teal 20% over black */
+  --c-on-accent: var(--bsa-black);
+  --c-inverse: var(--bsa-white);
+  --c-on-inverse: var(--bsa-black);
+  --c-brand: var(--bsa-red);
+  --c-quote: var(--bsa-teal);
 
-  --c-ok: #4cc28a;
-  --c-ok-soft: #10261b;
-  --c-warn: #e2ac45;
-  --c-warn-soft: #2a2010;
-  --c-risk: #f0875f;
-  --c-risk-soft: #2d1710;
-  --c-danger: #f27b72;
-  --c-danger-soft: #2e1413;
-  --c-info: #86a7ff;
-  --c-info-soft: #141d33;
-  --c-ai: #b69cff;
-  --c-ai-soft: #1f1833;
-  --c-neutral-soft: #1d2124;
+  --c-ok: var(--bsa-green);
+  --c-ok-fill: var(--bsa-green);
+  --c-ok-soft: #092417;
+  --c-warn: var(--bsa-yellow);
+  --c-warn-fill: var(--bsa-yellow);
+  --c-warn-soft: #332514;
+  --c-risk: var(--bsa-salmon);
+  --c-risk-fill: var(--bsa-salmon);
+  --c-risk-soft: #2c1d16;
+  --c-danger: #d95462; /* red + 25% white screen, for contrast on black */
+  --c-danger-fill: var(--bsa-red);
+  --c-danger-soft: #290509;
+  --c-info: var(--bsa-light-blue);
+  --c-info-fill: var(--bsa-light-blue);
+  --c-info-soft: #101925;
+  --c-ai: #bc90bb; /* purple + 50% white screen */
+  --c-ai-fill: var(--bsa-purple);
+  --c-ai-soft: #180618;
+  --c-neutral-soft: var(--bsa-white-10-on-black);
 
-  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.02);
-  --shadow-pop: 0 16px 48px -8px rgb(0 0 0 / 0.6);
+  --shadow-card: none;
+  --shadow-pop: 0 16px 48px -8px rgb(0 0 0 / 0.7), 0 0 0 1px var(--bsa-white-25-on-black);
   color-scheme: dark;
 }
 
 @theme inline {
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* Lato is the only BSA typeface; identifiers use Lato with tabular figures. */
+  --font-sans: var(--bsa-font);
+  --font-mono: var(--bsa-font);
+
+  /* Crisp, architectural corners. */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.1875rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.375rem;
 
   --color-canvas: var(--c-canvas);
   --color-surface: var(--c-surface);
@@ -97,6 +132,15 @@
   --color-faint: var(--c-faint);
   --color-line: var(--c-line);
   --color-line-strong: var(--c-line-strong);
+  --color-rule: var(--c-rule);
+  --color-brand: var(--c-brand);
+  --color-quote: var(--c-quote);
+  --color-ok-fill: var(--c-ok-fill);
+  --color-warn-fill: var(--c-warn-fill);
+  --color-risk-fill: var(--c-risk-fill);
+  --color-danger-fill: var(--c-danger-fill);
+  --color-info-fill: var(--c-info-fill);
+  --color-ai-fill: var(--c-ai-fill);
   --color-accent: var(--c-accent);
   --color-accent-strong: var(--c-accent-strong);
   --color-accent-soft: var(--c-accent-soft);
@@ -125,7 +169,6 @@
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    font-feature-settings: 'cv11', 'ss01';
   }
   body {
     @apply bg-canvas text-ink font-sans;
@@ -133,9 +176,12 @@
     line-height: 1.5;
   }
   :focus-visible {
-    outline: 2px solid var(--c-accent);
+    outline: 2px solid var(--c-accent-strong);
     outline-offset: 2px;
     border-radius: 4px;
+  }
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
   /* Grid children may shrink below their content width (prevents phone overflow). */
   .grid > * {
@@ -145,19 +191,29 @@
     background: var(--c-accent-soft);
   }
   h1, h2, h3, h4 {
-    letter-spacing: -0.015em;
+    letter-spacing: 0;
   }
 }
 
 @layer components {
+  /* ALL CAPS titles: Lato Black, 100 tracking (Brand Style Guide p. 24). */
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-muted;
+    @apply text-[11px] font-black uppercase tracking-[0.1em] text-muted;
   }
+  /* Headline: Lato Black. */
   .display {
-    @apply text-[30px] leading-[1.1] font-semibold tracking-[-0.03em] text-ink;
+    @apply text-[32px] leading-[1.12] font-black text-ink;
   }
   .code-tag {
-    @apply font-mono text-[11px] font-medium tracking-tight text-muted;
+    @apply text-[11.5px] font-bold text-muted tabular-nums;
+  }
+  /* Quotations: the only text set in teal (Lato Black). */
+  .quote {
+    @apply font-black text-quote;
+  }
+  /* Division: a single 1pt black line separates sections (p. 26). */
+  .rule {
+    @apply border-t border-rule;
   }
   .input {
     @apply w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-[14px] text-ink placeholder:text-faint transition-colors;
@@ -168,7 +224,7 @@
     @apply w-full border-separate border-spacing-0 text-left text-[13px];
   }
   .table-base th {
-    @apply sticky top-0 z-[1] border-b border-line bg-surface px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
+    @apply sticky top-0 z-[1] border-b border-rule bg-surface px-3 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-ink;
   }
   .table-base td {
     @apply border-b border-line px-3 py-2.5 align-top;

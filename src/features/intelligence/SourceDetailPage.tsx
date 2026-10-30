@@ -315,7 +315,7 @@ function StatementCards({ statements, focused }: { statements: Statement[]; focu
                   )}
                   {s.speaker && <span>· {s.speaker}</span>}
                 </div>
-                <blockquote className="border-l-2 border-ink pl-3 text-[14.5px] text-ink">“{highlightUncertain(s.originalText, s.uncertainWords)}”</blockquote>
+                <blockquote className="quote border-l-2 border-accent pl-3 text-[14.5px]">“{highlightUncertain(s.originalText, s.uncertainWords)}”</blockquote>
                 <div className="flex flex-wrap gap-1.5">
                   <KindBadge kind={s.kind} />
                   <CriticalityBadge level={s.criticality} />

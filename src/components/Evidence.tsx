@@ -16,7 +16,7 @@ export function StatementQuote({ statement, compact, showSource = true }: { stat
   const src = data.sources.find((s) => s.id === statement.sourceId)
   return (
     <figure className={cx('min-w-0', compact ? '' : 'space-y-2')}>
-      <blockquote className={cx('border-l-2 border-ink/80 pl-3 text-ink', compact ? 'text-[13px]' : 'text-[14px]')}>
+      <blockquote className={cx('quote border-l-2 border-accent pl-3', compact ? 'text-[13px]' : 'text-[14px]')}>
         <span className="sr-only">Original wording: </span>“{highlightUncertain(statement.originalText, statement.uncertainWords)}”
       </blockquote>
       <figcaption className="flex flex-wrap items-center gap-1.5 pl-3 text-[11.5px] text-muted">

@@ -12,7 +12,8 @@ import { readConfig } from '@/data/config'
 import { DEFAULT_DEMO_PERSONA, DemoAdapter } from '@/data/demoAdapter'
 import { RemoteAdapter } from '@/data/remoteAdapter'
 import type { Person } from '@/domain/types'
-import { AppShell, BrandMark } from '@/layout/AppShell'
+import { AppShell } from '@/layout/AppShell'
+import { BsaLogo } from '@/brand/BsaLogo'
 import { OverviewPage } from '@/features/overview/OverviewPage'
 import { NewProjectDialog } from '@/features/settings/NewProjectDialog'
 
@@ -136,9 +137,9 @@ function Bootstrap({ children }: { children: ReactNode }) {
       <Centered>
         <div className="rounded-xl border border-line bg-surface p-8 text-center shadow-card">
           <div className="mb-4 flex justify-center">
-            <BrandMark size={40} />
+            <BsaLogo height={48} />
           </div>
-          <h1 className="text-[20px] font-semibold">BSA Project Compass</h1>
+          <h1 className="text-[22px] font-black">Project Compass</h1>
           <p className="mt-1 mb-6 text-[13px] text-muted">Sign in with your organization account to continue.</p>
           <Button variant="primary" onClick={() => state.auth.signIn()}>
             Sign in with organization SSO

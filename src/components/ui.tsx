@@ -14,10 +14,10 @@ type Size = 'sm' | 'md'
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-inverse text-on-inverse hover:opacity-90 border border-transparent',
-  accent: 'bg-accent text-on-accent hover:bg-accent-strong border border-transparent',
+  accent: 'bg-accent text-on-accent hover:brightness-95 border border-transparent',
   secondary: 'bg-surface text-ink border border-line-strong hover:bg-sunken',
   ghost: 'bg-transparent text-ink-2 border border-transparent hover:bg-sunken',
-  danger: 'bg-danger text-white border border-transparent hover:opacity-90',
+  danger: 'bg-danger-fill text-white border border-transparent hover:opacity-90',
 }
 const SIZES: Record<Size, string> = {
   sm: 'h-8 px-2.5 text-[13px] gap-1.5',
@@ -74,23 +74,40 @@ export function IconButton({ label, children, className, ...rest }: ButtonHTMLAt
 
 export type Tone = 'neutral' | 'accent' | 'ok' | 'warn' | 'risk' | 'danger' | 'info' | 'ai' | 'outline' | 'inverse'
 
+/**
+ * Badges follow the brand rule that text is black or white: color is carried
+ * by the tinted (20% screen) background and the status dot, never the text.
+ */
 const TONES: Record<Tone, string> = {
-  neutral: 'bg-neutral-soft text-ink-2',
-  accent: 'bg-accent-soft text-accent-strong',
-  ok: 'bg-ok-soft text-ok',
-  warn: 'bg-warn-soft text-warn',
-  risk: 'bg-risk-soft text-risk',
-  danger: 'bg-danger-soft text-danger',
-  info: 'bg-info-soft text-info',
-  ai: 'bg-ai-soft text-ai',
-  outline: 'border border-line-strong text-muted',
+  neutral: 'bg-neutral-soft text-ink',
+  accent: 'bg-accent-soft text-ink',
+  ok: 'bg-ok-soft text-ink',
+  warn: 'bg-warn-soft text-ink',
+  risk: 'bg-risk-soft text-ink',
+  danger: 'bg-danger-soft text-ink',
+  info: 'bg-info-soft text-ink',
+  ai: 'bg-ai-soft text-ink',
+  outline: 'border border-line-strong text-ink',
   inverse: 'bg-inverse text-on-inverse',
+}
+
+const DOTS: Record<Tone, string> = {
+  neutral: 'bg-faint',
+  accent: 'bg-accent',
+  ok: 'bg-ok-fill',
+  warn: 'bg-warn-fill',
+  risk: 'bg-risk-fill',
+  danger: 'bg-danger-fill',
+  info: 'bg-info-fill',
+  ai: 'bg-ai-fill',
+  outline: 'bg-faint',
+  inverse: 'bg-on-inverse',
 }
 
 export function Badge({ tone = 'neutral', children, className, dot, title }: { tone?: Tone; children: ReactNode; className?: string; dot?: boolean; title?: string }) {
   return (
-    <span title={title} className={cx('inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap', TONES[tone], className)}>
-      {dot && <span className="size-1.5 rounded-full bg-current" aria-hidden />}
+    <span title={title} className={cx('inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px] font-bold whitespace-nowrap', TONES[tone], className)}>
+      {dot && <span className={cx('size-1.5 rounded-full', DOTS[tone])} aria-hidden />}
       {children}
     </span>
   )
@@ -140,7 +157,7 @@ export function PageHeader({ eyebrow, title, description, actions, meta }: { eye
 }
 
 export function Stat({ label, value, sub, tone, onClick }: { label: string; value: ReactNode; sub?: ReactNode; tone?: 'ok' | 'warn' | 'risk' | 'danger' | 'accent'; onClick?: () => void }) {
-  const toneClass = tone ? { ok: 'text-ok', warn: 'text-warn', risk: 'text-risk', danger: 'text-danger', accent: 'text-accent-strong' }[tone] : 'text-ink'
+  const toneClass = tone ? { ok: 'text-ok', warn: 'text-warn', risk: 'text-risk', danger: 'text-danger', accent: 'text-ink' }[tone] : 'text-ink'
   const Comp = onClick ? 'button' : 'div'
   return (
     <Comp onClick={onClick} className={cx('flex flex-col items-start rounded-lg border border-line bg-surface px-4 py-3.5 text-left shadow-card', onClick && 'transition-colors hover:border-line-strong')}>
@@ -153,7 +170,7 @@ export function Stat({ label, value, sub, tone, onClick }: { label: string; valu
 
 export function Meter({ value, label, tone = 'accent' }: { value: number; label: string; tone?: 'accent' | 'ok' | 'warn' }) {
   const pct = Math.round(Math.max(0, Math.min(1, value)) * 100)
-  const bar = { accent: 'bg-accent', ok: 'bg-ok', warn: 'bg-warn' }[tone]
+  const bar = { accent: 'bg-accent', ok: 'bg-ok-fill', warn: 'bg-warn-fill' }[tone]
   return (
     <div role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={label} className="h-1.5 w-full overflow-hidden rounded-full bg-sunken">
       <div className={cx('h-full rounded-full', bar)} style={{ width: `${pct}%` }} />

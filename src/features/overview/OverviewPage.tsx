@@ -56,8 +56,8 @@ export function OverviewPage() {
       </header>
 
       {/* Win Theme hero */}
-      <section aria-labelledby="wt-heading" className="relative overflow-hidden rounded-xl bg-inverse px-6 py-8 text-on-inverse sm:px-10 sm:py-10">
-        <div className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full border border-on-inverse/10" aria-hidden />
+      <section aria-labelledby="wt-heading" className="relative overflow-hidden rounded-lg bg-black px-6 py-8 text-white ring-1 ring-line sm:px-10 sm:py-10">
+        <div className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full border border-white/10" aria-hidden />
         <div className="pointer-events-none absolute -top-10 -right-10 size-44 rounded-full border border-accent/40" aria-hidden />
         <div className="relative flex flex-wrap items-center gap-3">
           <span id="wt-heading" className="text-[11px] font-semibold tracking-[0.14em] uppercase opacity-70">
@@ -74,7 +74,7 @@ export function OverviewPage() {
         ) : (
           <p className="relative mt-4 text-[15px] opacity-75">No {t.winTheme} drafted yet.</p>
         )}
-        <Link to={`${base}/vision`} className="relative mt-6 inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
+        <Link to={`${base}/vision`} className="relative mt-6 inline-flex items-center gap-1.5 text-[13px] font-bold text-white underline decoration-accent decoration-2 underline-offset-4">
           Open Vision & Principles <ArrowRight className="size-3.5" />
         </Link>
       </section>
@@ -92,7 +92,7 @@ export function OverviewPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <Card>
-          <CardHeader eyebrow="Layer two" title={`${t.guidingPrinciple}s`} description={`${m.principles.approved} of ${m.principles.total} approved`} actions={<Link className="text-[13px] font-medium text-accent-strong hover:underline" to={`${base}/vision`}>Manage</Link>} />
+          <CardHeader eyebrow="Layer two" title={`${t.guidingPrinciple}s`} description={`${m.principles.approved} of ${m.principles.total} approved`} actions={<Link className="text-[13px] font-medium text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-ink" to={`${base}/vision`}>Manage</Link>} />
           {principles.length === 0 ? (
             <div className="p-5">
               <EmptyState title={`No ${t.guidingPrinciple.toLowerCase()}s yet`}>Promote themes from the Alignment Studio or draft them in Vision & Principles.</EmptyState>

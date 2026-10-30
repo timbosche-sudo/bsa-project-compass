@@ -28,6 +28,7 @@ import { useProject, useProjects } from '@/app/project'
 import { useSession } from '@/app/session'
 import { Dialog } from '@/components/Dialog'
 import { cx } from '@/components/ui'
+import { BsaLogo } from '@/brand/BsaLogo'
 import { NODE_TYPE_LABELS, PHASE_LABELS, SECTOR_LABELS } from '@/domain/labels'
 import { ROLE_LABELS, roleFor } from '@/domain/permissions'
 import { search, searchIndex } from '@/domain/search'
@@ -121,15 +122,16 @@ function Sidebar({ onClose }: { onClose: () => void }) {
   const { data } = useProject()
   return (
     <>
-      <div className="flex h-14 items-center justify-between gap-2 border-b border-line px-4">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="BSA Project Compass home">
-          <BrandMark />
-          <span className="leading-tight">
-            <span className="block text-[13px] font-semibold tracking-tight text-ink">Project Compass</span>
-            <span className="block text-[10.5px] font-medium tracking-[0.14em] text-muted uppercase">BSA</span>
-          </span>
+      {/* Logo with clear space of half its height on all sides; product name set apart, never locked up with the logo. */}
+      <div className="relative border-b border-line px-5 pt-5 pb-4">
+        <Link to="/" className="block w-fit" aria-label="BSA Project Compass home">
+          <BsaLogo height={32} clearSpace={false} />
         </Link>
-        <button className="rounded p-1 text-muted hover:bg-sunken lg:hidden" onClick={onClose} aria-label="Close navigation">
+        <div className="mt-4 leading-tight">
+          <div className="text-[10px] font-black tracking-[0.1em] text-muted uppercase">BSA Intelligence</div>
+          <div className="mt-0.5 text-[17px] font-black text-ink">Project Compass</div>
+        </div>
+        <button className="absolute top-4 right-3 rounded p-1 text-muted hover:bg-sunken lg:hidden" onClick={onClose} aria-label="Close navigation">
           <X className="size-4" />
         </button>
       </div>
@@ -158,22 +160,11 @@ function Sidebar({ onClose }: { onClose: () => void }) {
           ))}
         </ul>
       </nav>
-      <div className="border-t border-line px-4 py-3 text-[11px] leading-snug text-faint">
+      <div className="border-t border-line px-5 py-3 text-[11px] leading-snug text-muted">
         From Vision to Measurable Impact
-        <br />© BSA
+        <br />© 2026 BSA
       </div>
     </>
-  )
-}
-
-export function BrandMark({ size = 28 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden className="shrink-0">
-      <rect width="32" height="32" rx="6" className="fill-inverse" />
-      <circle cx="16" cy="16" r="9.5" fill="none" className="stroke-on-inverse" strokeWidth="1.4" />
-      <path d="M16 6.5 19 16l-3 9.5L13 16z" className="fill-accent" />
-      <path d="M16 16 13 16 16 25.5z" className="fill-on-inverse" />
-    </svg>
   )
 }
 
@@ -187,7 +178,7 @@ function ProjectSwitcher() {
     <>
       <DM.Root>
         <DM.Trigger className="flex w-full items-center gap-2.5 rounded-md border border-line px-2.5 py-2 text-left hover:bg-sunken" aria-label="Switch project">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded bg-accent-soft font-mono text-[10px] font-semibold text-accent-strong">{p.code.slice(0, 3)}</span>
+          <span className="flex size-8 shrink-0 items-center justify-center rounded bg-accent-soft font-mono text-[10px] font-semibold text-ink underline decoration-accent decoration-2 underline-offset-4">{p.code.slice(0, 3)}</span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[13px] font-semibold text-ink">{p.name}</span>
             <span className="block truncate text-[11.5px] text-muted">

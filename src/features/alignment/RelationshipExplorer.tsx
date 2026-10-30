@@ -40,7 +40,7 @@ const CompassNode = memo(function CompassNode({ data }: NodeProps<Node<FlowData>
       <Handle type="target" position={Position.Left} className="!size-1.5 !border-0 !bg-line-strong" />
       <div className="flex items-center gap-1.5">
         <span className="font-mono text-[10px] text-muted">{g.code}</span>
-        {g.flags.critical && <span className="size-1.5 rounded-full bg-danger" title="Critical / non-negotiable" />}
+        {g.flags.critical && <span className="size-1.5 rounded-full bg-danger-fill" title="Critical / non-negotiable" />}
         {g.flags.orphan && <span className="text-[9.5px] font-semibold text-danger uppercase">orphan</span>}
         {g.flags.unsupported && <span className="text-[9.5px] font-semibold text-warn uppercase">unsupported</span>}
       </div>
@@ -207,7 +207,7 @@ export function RelationshipExplorer() {
               <div className="mt-2 font-mono text-[11px] text-muted">{sel.code}</div>
               <p className="mt-0.5 line-clamp-5 text-[13.5px] font-medium text-ink">{sel.title}</p>
               <p className="mt-2 text-[12px] text-muted">{(focus?.size ?? 1) - 1} connected items upstream and downstream are highlighted.</p>
-              <Link to={nodePath(data.project.id, sel.ref)} className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-accent-strong hover:underline">
+              <Link to={nodePath(data.project.id, sel.ref)} className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-ink">
                 Open <ArrowUpRight className="size-3.5" />
               </Link>
             </aside>
