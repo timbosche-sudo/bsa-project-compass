@@ -38,18 +38,20 @@ Requires Node.js 20 or newer (developed on Node 22).
 
 ## What's in the app
 
-| # | Section | What it does |
-|---|---|---|
-| 1 | **Project Overview** | The Win Theme, the alignment chain (sources → decisions), the principles, what needs attention, milestones and activity. |
-| 2 | **Project Intelligence** | A source register with attribution, classification, version and extraction status. Statements are recorded verbatim, with interpretation kept separate. Handwritten notes are shown beside their transcription, with uncertain words, attributed corrections, revision history and duplicate-photo flags. |
-| 3 | **Alignment Studio** | Group statements into themes; merge, split and move evidence; flag conflicts, themes without Owner support and overlooked requirements; track open questions; promote themes to candidate principles. Also hosts the **Traceability Matrix** (filterable, expandable, CSV/XLSX) and the **Relationship Explorer** (an interactive graph with focus mode and an accessible table alternative). |
-| ★ | **Owner Workshop** | Live meeting mode for presenting, wordsmithing and adopting the Win Theme and Guiding Principles: 16:9 Present and Edit modes on the same screen, inline editing with autosave and recovery, undo/redo, add/duplicate/delete/merge/reorder, review statuses, Owner approval of the exact wording, facilitator notes, an optional audience window, and a meeting summary PDF. See [docs/WORKSHOP_MODE.md](docs/WORKSHOP_MODE.md). |
-| 4 | **Vision & Principles** | Compare Win Theme alternatives side by side. A principle editor provides evidence coverage, a decision-making test, comment threads, governed approval (by the accountable approver), version history with restore, and locking of approved text. |
-| 5 | **Design Drivers** | A register with table, card, principle, accountability and phase views, plus a status strip. Approval and performance are tracked separately. Targets are proposed and approved in separate steps. Observed values are recorded with dates. Verification requires evidence, a reviewer and a date. Commitment fields are locked once a driver is approved. |
-| 6 | **Decision Lab** | Choosing by Advantages: alternatives, mandatory requirements, factors, attributes, least-preferred baselines, advantages, judged importance with rationale, and paramount anchoring. Importance is plotted against cost, which is kept separate. Informal scoring is labelled separately. Recommendation and approval require two different people, decisions lock once approved, and a PDF decision record can be exported. |
-| 7 | **Success Dashboard** | Performance achievement and data completeness are reported separately. Shows at-risk drivers, drivers without owners, targets awaiting approval, milestones, decisions and evidence gaps, filterable by principle, organization, phase, decision status and measurement state. |
-| 8 | **Reports** | Alignment Report (PDF), Alignment Presentation (PPTX), Design Driver Register (CSV/XLSX), Traceability Matrix (CSV/XLSX) and Decision Record (PDF). Drafts are labelled; demo exports are watermarked. |
-| 9 | **Project Settings** | Project and Owner profile, project-specific terminology, team and roles, milestones, AI policy and audit log. |
+Compass 2.0 is organized around how a BSA team works with an Owner: **Understand → Interpret → Align**. Advanced tools stay available under *More tools* and are never required.
+
+| Section | What it does |
+|---|---|
+| **Project Home** | Project identity, the current stage, the latest working vision, principles, unresolved questions, a qualitative readiness checklist, recent meaningful changes and deliverables. No task counters. |
+| **01 Understand** | **Evidence** — sources and verbatim statements, attribution, classification, handwritten-note transcription with attributed corrections. **Themes** — group, merge, split and promote themes. **Critical Questions** — open questions, recorded tensions and rules-based prompts for missing perspectives and solution-vs-need language. **What We Heard** — an evidence-linked synthesis (aspirations, themes, tensions, perspectives, priorities) with presentation toggles, team review and an Owner-ready preview with verbatim quotes. |
+| **02 Interpret** | **Point of View** — central ambition, opportunity, connecting idea, tensions, distinctiveness, what to keep in mind, and alternative directions with one recommendation; versioned. **Vision** (terminology is configurable, e.g. *Win Theme*) — compare alternatives with governed approval. **Guiding Principles** — wording governance plus *Why it matters* and *Emerging design implications*, kept outside the locked wording, and a rules-based quality review. **Design Opportunities** — non-prescriptive possibilities grouped by principle, linkable to Design Drivers. **What Success Could Look Like** — potential outcomes by category and state, optional possible measures; no invented targets. |
+| **03 Align** | Prepare for and hold the Owner conversation: readiness for presenting, past and planned workshops, and the **Owner Workshop** — 16:9 Present and Edit modes, inline wordsmithing with autosave and recovery, undo/redo, review statuses, optional formal adoption of exact wording, facilitator notes, an audience window and a meeting summary PDF. See [docs/WORKSHOP_MODE.md](docs/WORKSHOP_MODE.md). |
+| **Reports & Deliverables** | Alignment Report (PDF), Alignment Presentation (PPTX), Design Driver Register (CSV/XLSX), Traceability Matrix (CSV/XLSX) and Decision Record (PDF). Drafts are labelled; demo exports are watermarked. |
+| *More tools* | **From Vision to Design** — each principle → opportunities → potential outcomes, with dated evidence of progress. **Evidence Map** — Traceability Matrix and Relationship Explorer. **Design Drivers**, **Decision Lab** (Choosing by Advantages), **Success Dashboard** and **Project Settings**, unchanged from Compass 1.x. |
+
+The **Thinking Partner** drawer in Understand and Interpret runs transparent, rule-based checks (no AI model). Its suggestions change nothing until a reviewer accepts them. Capabilities that need a language model are shown disabled and labelled *Requires an approved AI provider*.
+
+Compass 1.x links (`/intelligence`, `/alignment`, `/vision`) redirect to their new locations.
 
 The app also has global search (⌘/Ctrl-K), breadcrumbs, a project switcher, a new-project flow, light and dark appearance, and layouts tuned for iPad Pro landscape.
 
@@ -68,13 +70,15 @@ Useful personas: *Avery Lindqvist* (Project Administrator), *Jordan Okafor* (Edi
 
 Sample workflows to try:
 
-0. **Owner workshop.** Open *Owner Workshop*. In the facilitator panel, go to *Session* and *Start session*. Wordsmith GP-03 on the slide, then *Record approval* for Dr. Morgan Ellery. Press **P** to present, open the *Audience window*, and finally end the session and download the meeting summary.
-1. **Transcription.** Open *Project Intelligence → SRC-002*, correct ST-008's uncertain word, then verify it.
-2. **Themes.** Use the *Alignment Studio* to group the orphaned statement ST-019 into a theme, or run the assistant and accept a suggested link.
-3. **Approval.** As *Dr. Morgan Ellery*, approve the Win Theme. Then, as *Jordan Okafor*, see that it is locked and that changing it means opening a revision.
-4. **Targets.** As *Jordan*, propose a target for DD-01. As *Morgan*, approve it.
-5. **Decision.** As *Morgan*, approve DEC-001 (recommended by Jordan), then export the decision record.
-6. **Reports.** Export the Alignment Report and presentation from *Reports*.
+0. **Owner workshop.** Open *Align → Open Owner Workshop*. In the facilitator panel, go to *Session* and *Start session*. Wordsmith GP-03 on the slide, then *Record approval* for Dr. Morgan Ellery. Press **P** to present, open the *Audience window*, and finally end the session and download the meeting summary.
+1. **Transcription.** Open *Understand → Evidence → SRC-002*, correct ST-008's uncertain word, then verify it.
+2. **What We Heard.** In *Understand → What We Heard*, review the rules-generated item about missing patient voices, link evidence to a new tension, and switch to *Owner-ready preview*.
+3. **Thinking Partner.** In *Understand → Critical Questions*, run *Raise critical questions* and accept one — it becomes an open question.
+4. **Interpret.** Sharpen the *Point of View*, recommend a direction, add *Why it matters* to a principle, and follow it through *More tools → From Vision to Design*.
+5. **Approval.** As *Dr. Morgan Ellery*, approve the Vision. Then, as *Jordan Okafor*, see that it is locked and that changing it means opening a revision.
+6. **Targets.** As *Jordan*, propose a target for DD-01. As *Morgan*, approve it.
+7. **Decision.** As *Morgan*, approve DEC-001 (recommended by Jordan), then export the decision record.
+8. **Reports.** Export the Alignment Report and presentation from *Reports*.
 
 ## Development
 

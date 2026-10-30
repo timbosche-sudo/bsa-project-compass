@@ -2,11 +2,11 @@
 
 Workshop Mode is used live in meetings with Owners to present, discuss, wordsmith and formally adopt the **Win Theme** (why the project matters) and the **Guiding Principles** (what success looks like). Design Drivers (how we design for success, with measurable criteria) remain in the Design Driver register and keep their links to the principles.
 
-Open it from **Owner Workshop** in the navigation, or from **Vision & Principles → Open Owner Workshop**. URL: `/projects/<id>/workshop`.
+Open it from **Align → Open Owner Workshop**. URL: `/projects/<id>/workshop`.
 
 ## Same data, no synchronization
 
-Workshop Mode is another view onto the same project data. Every change goes through the same command handler as the rest of Project Compass. That covers editing, statuses, approvals, duplicating, merging, deleting and reordering. Edits appear immediately in Vision & Principles, the Overview, the Traceability Matrix, reports and the audience window. Nothing needs exporting or synchronizing by hand.
+Workshop Mode is another view onto the same project data. Every change goes through the same command handler as the rest of Project Compass. That covers editing, statuses, approvals, duplicating, merging, deleting and reordering. Edits appear immediately in Interpret, Project Home, the Traceability Matrix, reports and the audience window. Nothing needs exporting or synchronizing by hand.
 
 ## Supported environments
 
@@ -69,6 +69,6 @@ The public demonstration build contains only synthetic data and stores it in the
 ## Known limitations
 
 - The audience window follows the facilitator only within the same browser on the same computer. That's the intended setup: Teams sharing or an extended display. Remote attendees see the shared screen.
-- Merges aren't on the Undo stack. They are confirmed explicitly, and the merged principles can be reinstated from their slides, or from Vision & Principles with *Show superseded*.
+- Merges aren't on the Undo stack. They are confirmed explicitly, and the merged principles can be reinstated from their slides, or from *Interpret → Guiding Principles* with *Show superseded*.
 - Two people editing the same field at the same moment: the second save may hit a conflict and refresh rather than merge. One facilitator edits at a time.
 - Rich text (bold, bullets) isn't supported in principle wording; line breaks are.

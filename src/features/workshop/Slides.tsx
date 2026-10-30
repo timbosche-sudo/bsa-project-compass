@@ -245,10 +245,10 @@ function WinThemeSlide({ slide, mode, index, total, opts }: SlideProps) {
       <Header dark title={data.project.terminology.winTheme} detail={alternatives.length > 1 ? `Alternative ${String.fromCharCode(65 + n)} of ${alternatives.length}` : undefined} status={opts.showStatus ? <StatusPill status={w.status} dark /> : undefined} />
       <div className="absolute top-[13.5cqw] left-[6cqw] w-[82cqw]">
         <div className="text-[5.8cqw] leading-[1.08] font-black">
-          <Editable kind="winTheme" item={w} field="statement" mode={mode} label="Win Theme statement" placeholder="Win Theme" />
+          <Editable kind="winTheme" item={w} field="statement" mode={mode} label={`${data.project.terminology.winTheme} statement`} placeholder={data.project.terminology.winTheme} />
         </div>
         <div className="mt-[2.6cqw] max-w-[66cqw] text-[1.8cqw] leading-[1.5]" style={{ color: 'rgba(255,255,255,0.8)' }}>
-          <Editable kind="winTheme" item={w} field="narrative" mode={mode} label="Win Theme narrative" placeholder="Supporting narrative" />
+          <Editable kind="winTheme" item={w} field="narrative" mode={mode} label={`${data.project.terminology.winTheme} narrative`} placeholder="Supporting narrative" />
         </div>
         <ApprovalStamp item={w} dark />
       </div>

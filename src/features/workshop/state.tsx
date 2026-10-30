@@ -273,10 +273,10 @@ export function useWorkshopActions() {
   }, [run, trackCreation])
 
   const addWinTheme = useCallback(async () => {
-    const id = await run({ type: 'winTheme.create', content: { statement: 'New Win Theme alternative', narrative: '' } }, 'Win Theme alternative added')
-    if (id) trackCreation('Add Win Theme', 'winTheme', id)
+    const id = await run({ type: 'winTheme.create', content: { statement: `New ${data.project.terminology.winTheme} alternative`, narrative: '' } }, `${data.project.terminology.winTheme} alternative added`)
+    if (id) trackCreation(`Add ${data.project.terminology.winTheme}`, 'winTheme', id)
     return id ?? null
-  }, [run, trackCreation])
+  }, [run, trackCreation, data.project.terminology.winTheme])
 
   const duplicate = useCallback(
     async (kind: FrameworkKind, id: string, code: string) => {

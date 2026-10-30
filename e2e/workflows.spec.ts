@@ -17,10 +17,20 @@ async function persona(page: Page, name: string) {
 test.beforeEach(async ({ page }) => fresh(page))
 
 test('navigates every primary section with breadcrumbs and search', async ({ page }) => {
-  const sections = ['Project Intelligence', 'Alignment Studio', 'Vision & Principles', 'Design Drivers', 'Decision Lab', 'Success Dashboard', 'Reports', 'Project Settings']
-  for (const s of sections) {
-    await page.getByRole('navigation', { name: 'Project sections' }).getByRole('link', { name: s }).click()
-    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText(s === 'Reports' ? 'Reports' : s)
+  const nav = page.getByRole('navigation', { name: 'Project sections' })
+  for (const [link, crumb] of [
+    ['Understand', 'Evidence'],
+    ['Interpret', 'Point of View'],
+    ['Align', 'Align'],
+    ['Reports & Deliverables', 'Reports & Deliverables'],
+  ]) {
+    await nav.getByRole('link', { name: link }).click()
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText(crumb)
+  }
+  await nav.getByRole('button', { name: 'More tools' }).click()
+  for (const s of ['From Vision to Design', 'Evidence Map', 'Design Drivers', 'Decision Lab', 'Success Dashboard', 'Project Settings']) {
+    await nav.getByRole('link', { name: s }).click()
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toContainText(s)
   }
   await page.keyboard.press('Control+k')
   await page.getByRole('combobox', { name: 'Search query' }).fill('DD-07')
@@ -28,8 +38,17 @@ test('navigates every primary section with breadcrumbs and search', async ({ pag
   await expect(page.getByRole('heading', { level: 1, name: 'Daylight and views for staff' })).toBeVisible()
 })
 
+test('Compass 1.x links redirect to their new locations', async ({ page }) => {
+  await page.goto(`${P}/intelligence/src-2`)
+  await expect(page).toHaveURL(/\/understand\/evidence\/src-2$/)
+  await page.goto(`${P}/alignment?tab=matrix`)
+  await expect(page).toHaveURL(/\/more\/evidence-map\?tab=matrix$/)
+  await page.goto(`${P}/vision?principle=gp-3`)
+  await expect(page).toHaveURL(/\/interpret\/principles\?principle=gp-3$/)
+})
+
 test('registers a source, records a verbatim statement and keeps it after reload', async ({ page }) => {
-  await page.goto(`${P}/intelligence`)
+  await page.goto(`${P}/understand/evidence`)
   await page.getByRole('button', { name: 'Register source' }).click()
   const dlg = page.getByRole('dialog')
   await dlg.getByLabel('Title').fill('Synthetic follow-up interview')
@@ -45,7 +64,7 @@ test('registers a source, records a verbatim statement and keeps it after reload
 })
 
 test('corrects and verifies a handwritten transcription beside the image', async ({ page }) => {
-  await page.goto(`${P}/intelligence/src-2`)
+  await page.goto(`${P}/understand/evidence/src-2`)
   await expect(page.getByRole('img', { name: /original photograph/ })).toBeVisible()
   const row = page.locator('#stmt-st-8')
   await expect(row.getByRole('button', { name: 'Verify' })).toBeDisabled()
@@ -66,12 +85,12 @@ test('enforces roles: viewers cannot edit; reviewers approve; approved text is l
   await expect(page.getByRole('button', { name: /New design driver/ })).toHaveCount(0)
 
   await persona(page, 'Dr. Morgan Ellery')
-  await page.goto(`${P}/vision`)
+  await page.goto(`${P}/interpret/vision`)
   await page.getByRole('button', { name: 'Approve' }).first().click()
   await page.getByRole('dialog').getByRole('button', { name: 'Approve' }).click()
   await expect(page.getByText(/Approved v4 by Dr. Morgan Ellery/)).toBeVisible()
   await persona(page, 'Jordan Okafor')
-  await page.goto(`${P}/vision`)
+  await page.goto(`${P}/interpret/vision`)
   const wt = page.locator('section[aria-labelledby="wt"]')
   await expect(wt.getByText('Locked').first()).toBeVisible()
   await expect(wt.getByRole('button', { name: 'Open revision' })).toBeVisible()
@@ -126,7 +145,7 @@ test('projects are isolated by membership', async ({ page }) => {
 })
 
 test('relationship explorer focuses a chain and offers an accessible list', async ({ page }) => {
-  await page.goto(`${P}/alignment?tab=explorer`)
+  await page.goto(`${P}/more/evidence-map?tab=explorer`)
   await page.getByRole('combobox', { name: 'Focus on a principle' }).selectOption({ label: 'Focus: GP-01 Reliability by Design' })
   await page.getByRole('radio', { name: 'Accessible list' }).click()
   const table = page.getByRole('table')

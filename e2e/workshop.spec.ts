@@ -103,7 +103,7 @@ test('Present mode: full-window slides, keyboard navigation, in-place editing, a
   await page.keyboard.press('ArrowRight')
   await expect(page.getByTestId('slide-stage')).toContainText('Precision at Scale')
   await page.keyboard.press('e')
-  const stmt = page.getByRole('textbox', { name: 'WT-02 Win Theme statement' })
+  const stmt = page.getByRole('textbox', { name: 'WT-02 Vision statement' })
   await stmt.fill('Precision at Scale. Care at Every Step.')
   await stmt.press('Control+Enter')
   await expect(page.getByTestId('slide-stage')).toContainText('Care at Every Step.')
@@ -113,7 +113,7 @@ test('Present mode: full-window slides, keyboard navigation, in-place editing, a
   await expect(page.getByTestId('present-mode')).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'Slides' })).toBeVisible()
   // Same slide in Edit mode.
-  await expect(page.getByRole('textbox', { name: 'WT-02 Win Theme statement' })).toHaveValue('Precision at Scale. Care at Every Step.')
+  await expect(page.getByRole('textbox', { name: 'WT-02 Vision statement' })).toHaveValue('Precision at Scale. Care at Every Step.')
 })
 
 test('separate audience window follows the facilitator and shows saved edits, without facilitator content', async ({ page, context }) => {

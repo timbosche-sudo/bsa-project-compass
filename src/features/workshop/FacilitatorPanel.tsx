@@ -74,7 +74,7 @@ export function FacilitatorPanel({ item, kind, session, onSelectSession }: { ite
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 scroll-thin">
         {tab === 'notes' && <NotesTab item={item} kind={kind} session={session} onSession={() => setTab('session')} />}
-        {tab === 'evidence' && (item && kind ? <EvidencePanel target={{ type: kind, id: item.id }} allowLink={item.status !== 'approved'} /> : <p className="text-[13px] text-muted">Select a Win Theme or principle slide to see its supporting evidence.</p>)}
+        {tab === 'evidence' && (item && kind ? <EvidencePanel target={{ type: kind, id: item.id }} allowLink={item.status !== 'approved'} /> : <p className="text-[13px] text-muted">Select a vision or principle slide to see its supporting evidence.</p>)}
         {tab === 'history' && <HistoryTab item={item} kind={kind} />}
         {tab === 'session' && <SessionTab session={session} onSelectSession={onSelectSession} />}
       </div>
@@ -169,7 +169,7 @@ function ActionsEditor({ session, editable }: { session: WorkshopSession; editab
 
 function HistoryTab({ item, kind }: { item: WinTheme | GuidingPrinciple | null; kind: FrameworkKind | null }) {
   const { run, can, personName } = useProject()
-  if (!item || !kind) return <p className="text-[13px] text-muted">Select a Win Theme or principle slide to see its revision history.</p>
+  if (!item || !kind) return <p className="text-[13px] text-muted">Select a vision or principle slide to see its revision history.</p>
   const locked = item.status === 'approved' || item.status === 'superseded'
   return (
     <div className="space-y-4">

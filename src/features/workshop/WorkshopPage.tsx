@@ -523,7 +523,7 @@ function SlideRail({ slides, current, onSelect, onAddPrinciple, onAddWinTheme, o
             Add principle
           </Button>
           <Button size="sm" variant="ghost" className="w-full justify-start" icon={<Plus className="size-3.5" />} onClick={onAddWinTheme}>
-            Add Win Theme alternative
+            Add {data.project.terminology.winTheme} alternative
           </Button>
         </div>
       )}

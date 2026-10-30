@@ -50,8 +50,9 @@ The repository was empty: there was no existing code, no design-system files and
 | `src/services/ai/*` | Provider interface, rule-based provider, remote AI provider, output schema |
 | `src/exporters/*` | CSV (injection-safe), XLSX, PDF report and decision record, PPTX deck |
 | `src/components/*` | Design-system primitives, dialogs and confirmations, evidence, comments, versions |
-| `src/layout/AppShell.tsx` | Navigation, breadcrumbs, search, project and persona switchers, demo banner |
-| `src/features/*` | Pages for each primary section |
+| `src/layout/AppShell.tsx` | Navigation (Home · Understand · Interpret · Align · Reports · More tools), breadcrumbs, search, project and persona switchers, demo banner |
+| `src/layout/StageLayout.tsx`, `stages.tsx` | Stage header, step navigation and Thinking Partner drawer for Understand, Interpret and More tools |
+| `src/features/*` | Pages for each primary section (`home`, `understand`, `interpret`, `align`, `more`, plus the Compass 1.x feature folders they reuse) |
 | `src/features/workshop/*` | Owner Workshop: slide deck, inline editing with autosave and recovery, undo/redo, facilitator panel, dialogs, audience window |
 | `src/domain/workshop.ts`, `wording.ts`, `normalize.ts` | Meeting summary model, canonical wording, data upgrades |
 | `supabase/migrations/*` | Schema, RLS, storage bucket, append-only audit, admin invariant |
@@ -96,6 +97,10 @@ Workshop Mode became the top priority after Stage 6. It reuses the existing Win 
 - coalesced autosave versions, recoverable trash, workshop sessions with an automatic change log, `normalizeProjectData` for older stored data, and live cross-window updates (`DataAdapter.subscribe`).
 
 Verification: 11 domain tests, plus 8 end-to-end flows at 1920×1080, 1440×900 and iPad Pro. See [WORKSHOP_MODE.md](WORKSHOP_MODE.md).
+
+### Compass 2.0 Stage 2: Understand → Interpret (implemented for review)
+
+New navigation and Project Home; What We Heard, Point of View, principle support text, Design Opportunities, Potential Outcomes and From Vision to Design; rules-based Thinking Partner checks; and legacy URL redirects. See [COMPASS_2_STAGE2.md](COMPASS_2_STAGE2.md).
 
 ### Revised roadmap (recommended order)
 
