@@ -3,9 +3,9 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Compass,
   FileText,
   FlaskConical,
+  Home,
   Layers,
   LayoutDashboard,
   Lightbulb,
@@ -14,6 +14,7 @@ import {
   Moon,
   Plus,
   Presentation,
+  Route,
   Search,
   Settings,
   Sun,
@@ -39,23 +40,29 @@ interface NavItem {
   label: string
   icon: ReactNode
   end?: boolean
+  number?: string
 }
 
-function useNav(): NavItem[] {
+function useNav(): { primary: NavItem[]; more: NavItem[] } {
   const { data } = useProject()
   const t = data.project.terminology
-  return [
-    { to: '', label: 'Project Overview', icon: <Compass className="size-4" />, end: true },
-    { to: 'intelligence', label: 'Project Intelligence', icon: <Telescope className="size-4" /> },
-    { to: 'alignment', label: 'Alignment Studio', icon: <Layers className="size-4" /> },
-    { to: 'vision', label: 'Vision & Principles', icon: <Lightbulb className="size-4" /> },
-    { to: 'workshop', label: 'Owner Workshop', icon: <Presentation className="size-4" /> },
-    { to: 'drivers', label: `${t.designDriver}s`, icon: <Target className="size-4" /> },
-    { to: 'decisions', label: `${t.decision} Lab`, icon: <FlaskConical className="size-4" /> },
-    { to: 'dashboard', label: 'Success Dashboard', icon: <LayoutDashboard className="size-4" /> },
-    { to: 'reports', label: 'Reports', icon: <FileText className="size-4" /> },
-    { to: 'settings', label: 'Project Settings', icon: <Settings className="size-4" /> },
-  ]
+  return {
+    primary: [
+      { to: '', label: 'Project Home', icon: <Home className="size-4" />, end: true },
+      { to: 'understand', label: 'Understand', number: '01', icon: <Telescope className="size-4" /> },
+      { to: 'interpret', label: 'Interpret', number: '02', icon: <Lightbulb className="size-4" /> },
+      { to: 'align', label: 'Align', number: '03', icon: <Presentation className="size-4" /> },
+      { to: 'reports', label: 'Reports & Deliverables', icon: <FileText className="size-4" /> },
+    ],
+    more: [
+      { to: 'more/from-vision-to-design', label: 'From Vision to Design', icon: <Route className="size-4" /> },
+      { to: 'more/evidence-map', label: 'Evidence Map', icon: <Layers className="size-4" /> },
+      { to: 'drivers', label: `${t.designDriver}s`, icon: <Target className="size-4" /> },
+      { to: 'decisions', label: `${t.decision} Lab`, icon: <FlaskConical className="size-4" /> },
+      { to: 'dashboard', label: 'Success Dashboard', icon: <LayoutDashboard className="size-4" /> },
+      { to: 'settings', label: 'Project Settings', icon: <Settings className="size-4" /> },
+    ],
+  }
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -120,6 +127,13 @@ function DemoBanner() {
 function Sidebar({ onClose }: { onClose: () => void }) {
   const nav = useNav()
   const { data } = useProject()
+  const location = useLocation()
+  const base = `/projects/${data.project.id}`
+  const inMore = nav.more.some((m) => location.pathname.startsWith(`${base}/${m.to}`))
+  const [moreOpen, setMoreOpen] = useState(inMore)
+  useEffect(() => {
+    if (inMore) setMoreOpen(true)
+  }, [inMore])
   return (
     <>
       {/* Logo with clear space of half its height on all sides; product name set apart, never locked up with the logo. */}
@@ -140,31 +154,57 @@ function Sidebar({ onClose }: { onClose: () => void }) {
       </div>
       <nav className="flex-1 overflow-y-auto p-3 scroll-thin" aria-label="Project sections">
         <ul className="space-y-0.5">
-          {nav.map((item, i) => (
+          {nav.primary.map((item) => (
             <li key={item.to}>
-              <NavLink
-                to={`/projects/${data.project.id}/${item.to}`}
-                end={item.end}
-                className={({ isActive }) =>
-                  cx(
-                    'group flex items-center gap-3 rounded-md px-2.5 py-2 text-[13.5px] font-medium transition-colors',
-                    isActive ? 'bg-inverse text-on-inverse' : 'text-ink-2 hover:bg-sunken hover:text-ink',
-                  )
-                }
-              >
-                <span className="font-mono text-[10.5px] opacity-50 tabular-nums">{String(i + 1).padStart(2, '0')}</span>
-                {item.icon}
-                <span className="truncate">{item.label}</span>
-              </NavLink>
+              <SideLink item={item} base={base} />
             </li>
           ))}
         </ul>
+        <div className="mt-4 border-t border-line pt-3">
+          <button
+            type="button"
+            onClick={() => setMoreOpen(!moreOpen)}
+            aria-expanded={moreOpen}
+            className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[11px] font-bold tracking-[0.08em] text-muted uppercase hover:text-ink"
+          >
+            {moreOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            More tools
+          </button>
+          {moreOpen && (
+            <ul className="mt-1 space-y-0.5">
+              {nav.more.map((item) => (
+                <li key={item.to}>
+                  <SideLink item={item} base={base} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </nav>
       <div className="border-t border-line px-5 py-3 text-[11px] leading-snug text-muted">
         From Vision to Measurable Impact
         <br />© 2026 BSA
       </div>
     </>
+  )
+}
+
+function SideLink({ item, base }: { item: NavItem; base: string }) {
+  return (
+    <NavLink
+      to={item.to ? `${base}/${item.to}` : base}
+      end={item.end}
+      className={({ isActive }) =>
+        cx(
+          'group flex items-center gap-3 rounded-md px-2.5 py-2 text-[13.5px] font-medium transition-colors',
+          isActive ? 'bg-inverse text-on-inverse' : 'text-ink-2 hover:bg-sunken hover:text-ink',
+        )
+      }
+    >
+      {item.icon}
+      <span className="truncate">{item.label}</span>
+      {item.number && <span className="ml-auto font-mono text-[10.5px] opacity-50 tabular-nums">{item.number}</span>}
+    </NavLink>
   )
 }
 
@@ -239,15 +279,30 @@ function TopBar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void
 }
 
 const SECTION_LABELS: Record<string, string> = {
-  intelligence: 'Project Intelligence',
-  alignment: 'Alignment Studio',
-  vision: 'Vision & Principles',
+  understand: 'Understand',
+  interpret: 'Interpret',
+  align: 'Align',
+  more: 'More tools',
   workshop: 'Owner Workshop',
   drivers: 'Design Drivers',
   decisions: 'Decision Lab',
   dashboard: 'Success Dashboard',
-  reports: 'Reports',
+  reports: 'Reports & Deliverables',
   settings: 'Project Settings',
+}
+
+const STEP_LABELS: Record<string, string> = {
+  evidence: 'Evidence',
+  themes: 'Themes',
+  questions: 'Critical Questions',
+  heard: 'What We Heard',
+  'point-of-view': 'Point of View',
+  vision: 'Vision',
+  principles: 'Guiding Principles',
+  opportunities: 'Design Opportunities',
+  success: 'What Success Could Look Like',
+  'from-vision-to-design': 'From Vision to Design',
+  'evidence-map': 'Evidence Map',
 }
 
 function Breadcrumbs() {
@@ -256,8 +311,14 @@ function Breadcrumbs() {
   const location = useLocation()
   const parts = location.pathname.split('/').filter(Boolean)
   const section = parts[2]
-  const crumbs: { label: string; to?: string }[] = [{ label: data.project.name, to: `/projects/${data.project.id}` }]
-  if (section) crumbs.push({ label: SECTION_LABELS[section] ?? section, to: `/projects/${data.project.id}/${section}` })
+  const step = parts[3]
+  const base = `/projects/${data.project.id}`
+  const crumbs: { label: string; to?: string }[] = [{ label: data.project.name, to: base }]
+  if (section) crumbs.push({ label: SECTION_LABELS[section] ?? section, to: section === 'more' ? undefined : `${base}/${section}` })
+  if (step && STEP_LABELS[step]) {
+    const label = step === 'vision' ? data.project.terminology.winTheme : STEP_LABELS[step]
+    crumbs.push({ label, to: `${base}/${section}/${step}` })
+  }
   if (params.sourceId) crumbs.push({ label: data.sources.find((s) => s.id === params.sourceId)?.code ?? 'Source' })
   if (params.driverId) crumbs.push({ label: data.drivers.find((s) => s.id === params.driverId)?.code ?? 'Driver' })
   if (params.decisionId) crumbs.push({ label: data.decisions.find((s) => s.id === params.decisionId)?.code ?? 'Decision' })

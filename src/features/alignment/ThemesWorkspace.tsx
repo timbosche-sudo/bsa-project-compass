@@ -6,7 +6,6 @@ import { formatDate } from '@/components/Collaboration'
 import { Dialog, useConfirm } from '@/components/Dialog'
 import { LinkedChips, StatementQuote } from '@/components/Evidence'
 import { CriticalityBadge, KindBadge, ThemeBadge } from '@/components/StatusBadge'
-import { SuggestionsPanel } from '@/components/SuggestionsPanel'
 import { Badge, Button, Callout, Card, CardHeader, cx, EmptyState, Field, IconButton, Input, optionsFrom, Select, Textarea } from '@/components/ui'
 import { CATEGORY_LABELS, CRITICALITY_LABELS } from '@/domain/labels'
 import { gapReport, isOwnerEvidence, themeStatementIds } from '@/domain/traceability'
@@ -84,8 +83,6 @@ export function ThemesWorkspace() {
               </div>
             )}
           </Card>
-          <QuestionsCard />
-          <SuggestionsPanel tasks={['suggest_relationships', 'suggest_themes', 'find_missing_requirements', 'validation_questions']} />
         </div>
 
         <div className="min-w-0 space-y-4">
@@ -140,7 +137,7 @@ function Insights({ gaps }: { gaps: ReturnType<typeof gapReport> }) {
       {gaps.orphanStatements.length > 0 && (
         <p className="text-[12px] text-muted sm:col-span-2 xl:col-span-4">
           {gaps.orphanStatements.length} statement(s) are not linked to anything —{' '}
-          <Link className="underline" to={`${base}/intelligence?filter=orphan`}>
+          <Link className="underline" to={`${base}/understand/evidence?filter=orphan`}>
             review orphaned statements
           </Link>
           . Frequency of mention is never treated as importance; criticality is set explicitly.
@@ -233,7 +230,7 @@ function ThemeCard({ theme, focused, unsupported }: { theme: Theme; focused: boo
       </ul>
       <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-3">
         {principle ? (
-          <Link to={`/projects/${data.project.id}/vision?principle=${principle.id}`} className="flex items-center gap-1 text-[13px] font-medium text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-ink">
+          <Link to={`/projects/${data.project.id}/interpret/principles?principle=${principle.id}`} className="flex items-center gap-1 text-[13px] font-medium text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-ink">
             Promoted to {principle.code} {principle.title} <ArrowUpRight className="size-3.5" />
           </Link>
         ) : (
@@ -452,7 +449,7 @@ function PromoteDialog({ open, onOpenChange, theme, unsupported }: { open: boole
   )
 }
 
-function QuestionsCard() {
+export function QuestionsCard() {
   const { data, can, run, personName } = useProject()
   const [q, setQ] = useState('')
   const [answering, setAnswering] = useState<string | null>(null)

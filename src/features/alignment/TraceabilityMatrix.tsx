@@ -115,7 +115,7 @@ export function TraceabilityMatrix() {
                       </div>
                     </td>
                     <td>
-                      <Link to={`${base}/intelligence/${r.sourceId}`} className="text-ink-2 hover:underline">
+                      <Link to={`${base}/understand/evidence/${r.sourceId}`} className="text-ink-2 hover:underline">
                         <span className="font-mono text-[11px] text-muted">{r.sourceCode}</span> {r.sourceTitle}
                       </Link>
                       {r.locator && <div className="text-[11.5px] text-muted">{r.locator}</div>}

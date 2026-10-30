@@ -1,40 +1,18 @@
-import { ArrowDown, ArrowUp, Presentation, CheckCircle2, GitBranch, Lock, MessageSquare, Pencil, Plus, Send, ShieldCheck } from 'lucide-react'
+import { ArrowDown, ArrowUp, CheckCircle2, GitBranch, Lock, MessageSquare, Pencil, Plus, Send, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useProject } from '@/app/project'
 import { CommentThread, formatDate, VersionHistory } from '@/components/Collaboration'
 import { Dialog, useConfirm } from '@/components/Dialog'
+import { EditableText } from '@/components/EditableText'
 import { EvidencePanel } from '@/components/Evidence'
 import { ApprovalBadge, DriverStatusBadge } from '@/components/StatusBadge'
-import { Badge, Button, Callout, Card, CardHeader, cx, EmptyState, Field, Input, KeyValue, optionsFrom, PageHeader, Select, Tabs, Textarea } from '@/components/ui'
+import { Badge, Button, Callout, Card, CardHeader, cx, EmptyState, Field, Input, KeyValue, optionsFrom, Select, Tabs, Textarea } from '@/components/ui'
 import { driverStatus, principleDriverIds } from '@/domain/drivers'
-import { CATEGORY_LABELS } from '@/domain/labels'
+import { CATEGORY_LABELS, OPPORTUNITY_STATE_LABELS } from '@/domain/labels'
 import { evidenceFor, isOwnerEvidence, isWorkshopEvidence } from '@/domain/traceability'
 import type { GuidingPrinciple, PrincipleCategory, PrincipleContent, WinTheme } from '@/domain/types'
 import { isActiveFramework } from '@/domain/wording'
-
-export default function VisionPage() {
-  const { data } = useProject()
-  const t = data.project.terminology
-  return (
-    <div className="space-y-10">
-      <PageHeader
-        eyebrow="Layers one and two"
-        title="Vision & Principles"
-        description={`The ${t.winTheme} communicates why the project matters. ${t.guidingPrinciple}s define what success must look like. Approved text is locked: neither edits nor the assistant can silently change it.`}
-        actions={
-          <Link to={`/projects/${data.project.id}/workshop`}>
-            <Button variant="primary" icon={<Presentation className="size-4" />}>
-              Open Owner Workshop
-            </Button>
-          </Link>
-        }
-      />
-      <WinThemes />
-      <Principles />
-    </div>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Win Themes
@@ -72,7 +50,7 @@ function useGovernance(kind: 'winTheme' | 'principle') {
   }
 }
 
-function WinThemes() {
+export function WinThemes({ headless }: { headless?: boolean } = {}) {
   const { data, can } = useProject()
   const [editing, setEditing] = useState<WinTheme | 'new' | null>(null)
   const [showSuperseded, setShowSuperseded] = useState(false)
@@ -80,8 +58,8 @@ function WinThemes() {
   const items = data.winThemes.filter((w) => showSuperseded || w.status !== 'superseded')
   return (
     <section aria-labelledby="wt">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
+      <div className={cx('mb-4 flex flex-wrap items-end justify-between gap-3', headless && 'justify-end')}>
+        <div className={cx(headless && 'sr-only')}>
           <div className="eyebrow">Layer one</div>
           <h2 id="wt" className="text-[20px] font-semibold tracking-tight">
             {t.winTheme} alternatives
@@ -266,7 +244,7 @@ function WinThemeDialog({ open, onOpenChange, winTheme }: { open: boolean; onOpe
 // Guiding Principles
 // ---------------------------------------------------------------------------
 
-function Principles() {
+export function Principles({ headless }: { headless?: boolean } = {}) {
   const { data, can, run } = useProject()
   const [params, setParams] = useSearchParams()
   const [creating, setCreating] = useState(false)
@@ -291,8 +269,8 @@ function Principles() {
 
   return (
     <section id="principles" aria-labelledby="gp" className="scroll-mt-20">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
+      <div className={cx('mb-4 flex flex-wrap items-end justify-between gap-3', headless && 'justify-end')}>
+        <div className={cx(headless && 'sr-only')}>
           <div className="eyebrow">Layer two</div>
           <h2 id="gp" className="text-[20px] font-semibold tracking-tight">
             {t.guidingPrinciple}s
@@ -393,7 +371,8 @@ function CoverageTable() {
 function PrincipleDetail({ p }: { p: GuidingPrinciple }) {
   const { data, can, run, personName } = useProject()
   const gov = useGovernance('principle')
-  const [tab, setTab] = useState<'evidence' | 'drivers' | 'comments' | 'history'>('evidence')
+  const [tab, setTab] = useState<'evidence' | 'opportunities' | 'drivers' | 'comments' | 'history'>('evidence')
+  const opportunities = data.opportunities.filter((o) => o.principleIds.includes(p.id)).sort((a, b) => a.order - b.order)
   const [editing, setEditing] = useState(false)
   const locked = p.status === 'approved'
   const driverIds = principleDriverIds(data, p.id)
@@ -421,6 +400,18 @@ function PrincipleDetail({ p }: { p: GuidingPrinciple }) {
         <h3 className="mt-3 text-[28px] leading-tight font-semibold tracking-[-0.025em]">{p.title}</h3>
         <p className="mt-2 text-[16px] leading-relaxed text-ink">{p.statement}</p>
         {p.intent && <p className="mt-3 text-[13.5px] leading-relaxed text-ink-2">{p.intent}</p>}
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="rounded-md border border-line p-3.5">
+            <div className="eyebrow mb-1.5">Why it matters</div>
+            <EditableText label="Why it matters" value={p.whyItMatters ?? ''} canEdit={can('framework.edit')} placeholder="What we heard that makes this principle important." onSave={(v) => run({ type: 'principle.updateSupport', id: p.id, whyItMatters: v }, 'Saved')} />
+          </div>
+          <div className="rounded-md border border-line p-3.5">
+            <div className="eyebrow mb-1.5">Emerging design implications</div>
+            <EditableText label="Emerging design implications" value={p.designImplications ?? ''} canEdit={can('framework.edit')} placeholder="What this might mean for the design — directions to explore, not solutions." onSave={(v) => run({ type: 'principle.updateSupport', id: p.id, designImplications: v }, 'Saved')} />
+          </div>
+        </div>
+        <p className="mt-2 text-[11.5px] text-muted">Supporting rationale is not part of the {locked ? 'locked ' : ''}principle wording and can be refined at any time.</p>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <KeyValue
@@ -492,6 +483,7 @@ function PrincipleDetail({ p }: { p: GuidingPrinciple }) {
           onChange={setTab}
           tabs={[
             { value: 'evidence', label: 'Supporting evidence', count: evidenceFor(data, { type: 'principle', id: p.id }).all.length },
+            { value: 'opportunities', label: 'Design Opportunities', count: opportunities.length },
             { value: 'drivers', label: `${t.designDriver}s`, count: drivers.length },
             { value: 'comments', label: <span className="flex items-center gap-1"><MessageSquare className="size-3.5" />Comments</span>, count: comments },
             { value: 'history', label: 'Version history', count: p.versions.length },
@@ -499,6 +491,22 @@ function PrincipleDetail({ p }: { p: GuidingPrinciple }) {
         />
         <div className="py-5">
           {tab === 'evidence' && <EvidencePanel target={{ type: 'principle', id: p.id }} allowLink={!locked} />}
+          {tab === 'opportunities' &&
+            (opportunities.length === 0 ? (
+              <EmptyState title="No design opportunities yet">Capture where this principle opens up possibilities for the design.</EmptyState>
+            ) : (
+              <ul className="divide-y divide-line rounded-md border border-line">
+                {opportunities.map((o) => (
+                  <li key={o.id}>
+                    <Link to={`/projects/${data.project.id}/interpret/opportunities?opportunity=${o.id}`} className="flex items-center gap-3 px-3 py-2.5 hover:bg-sunken">
+                      <span className="font-mono text-[11px] text-muted">{o.code}</span>
+                      <span className="flex-1 text-[13.5px] font-medium">{o.title}</span>
+                      <Badge tone="outline">{OPPORTUNITY_STATE_LABELS[o.state]}</Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ))}
           {tab === 'drivers' &&
             (drivers.length === 0 ? (
               <EmptyState title={`No linked ${t.designDriver.toLowerCase()}s`}>Create drivers in the Design Driver register and link them to this principle.</EmptyState>

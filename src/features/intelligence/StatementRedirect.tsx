@@ -6,6 +6,6 @@ export default function StatementRedirect() {
   const { statementId } = useParams()
   const { data } = useProject()
   const s = data.statements.find((x) => x.id === statementId)
-  const base = `/projects/${data.project.id}/intelligence`
+  const base = `/projects/${data.project.id}/understand/evidence`
   return <Navigate to={s ? `${base}/${s.sourceId}?statement=${s.id}` : base} replace />
 }

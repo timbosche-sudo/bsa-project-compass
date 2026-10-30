@@ -30,7 +30,7 @@ export default function SourceDetailPage() {
     if (focused) document.getElementById(`stmt-${focused}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
   }, [focused])
 
-  if (!source) return <Navigate to={`/projects/${data.project.id}/intelligence`} replace />
+  if (!source) return <Navigate to={`/projects/${data.project.id}/understand/evidence`} replace />
   const dup = source.possibleDuplicateOf ? data.sources.find((s) => s.id === source.possibleDuplicateOf) : null
   const duplicatedBy = data.sources.filter((s) => s.possibleDuplicateOf === source.id)
   const image = source.file?.demoAsset ? `${import.meta.env.BASE_URL}${source.file.demoAsset}` : null
@@ -46,7 +46,7 @@ export default function SourceDetailPage() {
       confirmLabel: 'Delete source',
       tone: 'danger',
     })
-    if (r.confirmed && (await run({ type: 'source.delete', id: source.id }, `${source.code} deleted`)) !== undefined) navigate(`/projects/${data.project.id}/intelligence`)
+    if (r.confirmed && (await run({ type: 'source.delete', id: source.id }, `${source.code} deleted`)) !== undefined) navigate(`/projects/${data.project.id}/understand/evidence`)
   }
 
   return (

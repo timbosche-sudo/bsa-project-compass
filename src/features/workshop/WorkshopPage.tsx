@@ -294,7 +294,7 @@ function Workshop() {
   return (
     <div className="flex h-dvh flex-col bg-canvas">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 lg:px-4">
-        <Link to={`/projects/${data.project.id}/vision`} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted hover:bg-sunken hover:text-ink" aria-label="Back to Vision & Principles">
+        <Link to={`/projects/${data.project.id}/align`} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted hover:bg-sunken hover:text-ink" aria-label="Back to Align">
           <ArrowLeft className="size-4" />
           <BsaLogo height={26} clearSpace={false} className="mx-2" />
         </Link>

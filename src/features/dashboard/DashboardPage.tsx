@@ -159,12 +159,12 @@ export default function DashboardPage() {
         <Card>
           <CardHeader title="Evidence gaps" />
           <ul className="divide-y divide-line text-[13px]">
-            <GapRow icon={<FileWarning className="size-4 text-danger" />} label="Requirements not in framework" count={m.gaps.requirementsNotInFramework.length} to={`${base}/alignment`} />
-            <GapRow icon={<FileWarning className="size-4 text-warn" />} label="Principles without evidence" count={m.gaps.unsupportedPrinciples.length} to={`${base}/vision`} />
+            <GapRow icon={<FileWarning className="size-4 text-danger" />} label="Requirements not in framework" count={m.gaps.requirementsNotInFramework.length} to={`${base}/understand/questions`} />
+            <GapRow icon={<FileWarning className="size-4 text-warn" />} label="Principles without evidence" count={m.gaps.unsupportedPrinciples.length} to={`${base}/interpret/principles`} />
             <GapRow icon={<FileWarning className="size-4 text-warn" />} label="Drivers without evidence" count={m.gaps.driversWithoutEvidence.length} to={`${base}/drivers`} />
             <GapRow icon={<FileWarning className="size-4 text-warn" />} label="Drivers not linked to a principle" count={m.gaps.driversWithoutPrinciple.length} to={`${base}/drivers`} />
-            <GapRow icon={<CircleHelp className="size-4 text-info" />} label="Orphaned statements" count={m.gaps.orphanStatements.length} to={`${base}/intelligence?filter=orphan`} />
-            <GapRow icon={<CircleHelp className="size-4 text-info" />} label="Links awaiting review" count={m.gaps.pendingRelationships.length} to={`${base}/alignment?tab=matrix`} />
+            <GapRow icon={<CircleHelp className="size-4 text-info" />} label="Orphaned statements" count={m.gaps.orphanStatements.length} to={`${base}/understand/evidence?filter=orphan`} />
+            <GapRow icon={<CircleHelp className="size-4 text-info" />} label="Links awaiting review" count={m.gaps.pendingRelationships.length} to={`${base}/more/evidence-map?tab=matrix`} />
           </ul>
         </Card>
       </div>

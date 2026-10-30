@@ -14,14 +14,25 @@ import { RemoteAdapter } from '@/data/remoteAdapter'
 import type { Person } from '@/domain/types'
 import { AppShell } from '@/layout/AppShell'
 import { BsaLogo } from '@/brand/BsaLogo'
-import { OverviewPage } from '@/features/overview/OverviewPage'
+import ProjectHome from '@/features/home/ProjectHome'
+import { LegacyAlignment, LegacyIntelligence, LegacyVision } from '@/features/redirects'
+import { InterpretStage, MoreStage, UnderstandStage } from '@/layout/stages'
 import { NewProjectDialog } from '@/features/settings/NewProjectDialog'
 
 const IntelligencePage = lazy(() => import('@/features/intelligence/IntelligencePage'))
+const ThemesPage = lazy(() => import('@/features/understand/ThemesPage'))
+const QuestionsPage = lazy(() => import('@/features/understand/QuestionsPage'))
+const HeardPage = lazy(() => import('@/features/understand/HeardPage'))
+const PointOfViewPage = lazy(() => import('@/features/interpret/PointOfViewPage'))
+const VisionDraftsPage = lazy(() => import('@/features/interpret/VisionDraftsPage'))
+const PrinciplesPage = lazy(() => import('@/features/interpret/PrinciplesPage'))
+const OpportunitiesPage = lazy(() => import('@/features/interpret/OpportunitiesPage'))
+const SuccessPage = lazy(() => import('@/features/interpret/SuccessPage'))
+const AlignPage = lazy(() => import('@/features/align/AlignPage'))
+const FromVisionToDesignPage = lazy(() => import('@/features/more/FromVisionToDesignPage'))
+const EvidenceMapPage = lazy(() => import('@/features/more/EvidenceMapPage'))
 const SourceDetailPage = lazy(() => import('@/features/intelligence/SourceDetailPage'))
 const StatementRedirect = lazy(() => import('@/features/intelligence/StatementRedirect'))
-const AlignmentPage = lazy(() => import('@/features/alignment/AlignmentPage'))
-const VisionPage = lazy(() => import('@/features/vision/VisionPage'))
 const DriversPage = lazy(() => import('@/features/drivers/DriversPage'))
 const DriverDetailPage = lazy(() => import('@/features/drivers/DriverDetailPage'))
 const DecisionsPage = lazy(() => import('@/features/decisions/DecisionsPage'))
@@ -55,12 +66,46 @@ const router = createBrowserRouter(
             </AppShell>
           ),
           children: [
-        { index: true, element: <OverviewPage /> },
-        { path: 'intelligence', element: page(<IntelligencePage />) },
-        { path: 'intelligence/statement/:statementId', element: page(<StatementRedirect />) },
-        { path: 'intelligence/:sourceId', element: page(<SourceDetailPage />) },
-        { path: 'alignment', element: page(<AlignmentPage />) },
-        { path: 'vision', element: page(<VisionPage />) },
+            { index: true, element: <ProjectHome /> },
+            {
+              path: 'understand',
+              element: <UnderstandStage />,
+              children: [
+                { index: true, element: <Navigate to="evidence" replace /> },
+                { path: 'evidence', element: page(<IntelligencePage />) },
+                { path: 'evidence/statement/:statementId', element: page(<StatementRedirect />) },
+                { path: 'evidence/:sourceId', element: page(<SourceDetailPage />) },
+                { path: 'themes', element: page(<ThemesPage />) },
+                { path: 'questions', element: page(<QuestionsPage />) },
+                { path: 'heard', element: page(<HeardPage />) },
+              ],
+            },
+            {
+              path: 'interpret',
+              element: <InterpretStage />,
+              children: [
+                { index: true, element: <Navigate to="point-of-view" replace /> },
+                { path: 'point-of-view', element: page(<PointOfViewPage />) },
+                { path: 'vision', element: page(<VisionDraftsPage />) },
+                { path: 'principles', element: page(<PrinciplesPage />) },
+                { path: 'opportunities', element: page(<OpportunitiesPage />) },
+                { path: 'success', element: page(<SuccessPage />) },
+              ],
+            },
+            { path: 'align', element: page(<AlignPage />) },
+            {
+              path: 'more',
+              element: <MoreStage />,
+              children: [
+                { index: true, element: <Navigate to="from-vision-to-design" replace /> },
+                { path: 'from-vision-to-design', element: page(<FromVisionToDesignPage />) },
+                { path: 'evidence-map', element: page(<EvidenceMapPage />) },
+              ],
+            },
+            // Compass 1.x locations
+            { path: 'intelligence/*', element: <LegacyIntelligence /> },
+            { path: 'alignment', element: <LegacyAlignment /> },
+            { path: 'vision', element: <LegacyVision /> },
         { path: 'drivers', element: page(<DriversPage />) },
         { path: 'drivers/:driverId', element: page(<DriverDetailPage />) },
         { path: 'decisions', element: page(<DecisionsPage />) },

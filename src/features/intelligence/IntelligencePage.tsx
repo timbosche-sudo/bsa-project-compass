@@ -23,8 +23,8 @@ export default function IntelligencePage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Source intelligence"
-        title="Project Intelligence"
+        eyebrow="Understand"
+        title="Evidence"
         description="Every source and every extracted statement, with original wording, attribution and verification status. Interpretation is always kept separate from what was said."
         actions={
           can('source.create') && (
@@ -44,7 +44,7 @@ export default function IntelligencePage() {
         ]}
       />
       <div className="mt-5">{tab === 'sources' ? <SourcesTable /> : <StatementsList initialFilter={params.get('filter')} />}</div>
-      <SourceFormDialog open={creating} onOpenChange={setCreating} onSaved={(id) => navigate(`/projects/${data.project.id}/intelligence/${id}`)} />
+      <SourceFormDialog open={creating} onOpenChange={setCreating} onSaved={(id) => navigate(`/projects/${data.project.id}/understand/evidence/${id}`)} />
     </div>
   )
 }

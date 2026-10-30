@@ -1,4 +1,4 @@
-import { forwardRef, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { createContext, forwardRef, useContext, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { AlertTriangle, Inbox, Loader2 } from 'lucide-react'
 
 export function cx(...parts: (string | false | null | undefined)[]) {
@@ -142,7 +142,22 @@ export function CardHeader({ title, eyebrow, actions, description }: { title: Re
   )
 }
 
+/** True inside a stage (Understand / Interpret / More): pages render a compact header beneath the stage title. */
+export const InStageContext = createContext(false)
+
 export function PageHeader({ eyebrow, title, description, actions, meta }: { eyebrow?: ReactNode; title: ReactNode; description?: ReactNode; actions?: ReactNode; meta?: ReactNode }) {
+  const inStage = useContext(InStageContext)
+  if (inStage)
+    return (
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0 max-w-3xl">
+          <h1 className="text-[22px] leading-tight font-black tracking-tight text-ink">{title}</h1>
+          {description && <p className="mt-1 text-[13.5px] leading-relaxed text-muted">{description}</p>}
+          {meta && <div className="mt-2.5 flex flex-wrap items-center gap-2">{meta}</div>}
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      </header>
+    )
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0 max-w-3xl">
