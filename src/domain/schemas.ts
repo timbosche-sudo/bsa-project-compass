@@ -1,5 +1,8 @@
 import { z } from 'zod'
 import {
+  ALIGNMENT_STATUSES,
+  ALIGNMENT_TARGET_TYPES,
+  DIRECTION_STATES,
   HEARD_SECTIONS,
   OPPORTUNITY_STATES,
   OUTCOME_CATEGORIES,
@@ -395,6 +398,14 @@ export const commandSchema = z.discriminatedUnion('type', [
   cmd('outcome.delete', { id }),
   cmd('outcome.addProgress', { id, date: isoDate, kind: z.enum(PROGRESS_KINDS), note: z.string().trim().min(1, 'Describe the evidence').max(2000) }),
   cmd('outcome.removeProgress', { id, progressId: id }),
+  // Align
+  cmd('alignment.record', {
+    sessionId: id.nullable(),
+    target: z.object({ type: z.enum(ALIGNMENT_TARGET_TYPES), id }),
+    response: z.object({ status: z.enum(ALIGNMENT_STATUSES), feedback: longText, refinements: longText, questions: longText, ownerComments: longText }),
+  }),
+  cmd('direction.snapshot', { label: requiredShort, state: z.enum(DIRECTION_STATES), sessionId: id.nullable(), note: z.string().max(2000) }),
+  cmd('direction.restore', { id }),
   // Owner alignment workshops
   cmd('workshop.create', { title: requiredShort, date: isoDate, attendees: z.array(attendeeSchema).max(60) }),
   cmd('workshop.update', {

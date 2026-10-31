@@ -723,6 +723,59 @@ export interface PotentialOutcome {
 // Aggregate
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Compass 2.0 — Align
+// ---------------------------------------------------------------------------
+
+/** Not reviewed is the default: silence is never treated as alignment. */
+export const ALIGNMENT_STATUSES = ['not_reviewed', 'aligned', 'aligned_with_refinements', 'needs_discussion'] as const
+export type AlignmentStatus = (typeof ALIGNMENT_STATUSES)[number]
+export const ALIGNMENT_TARGET_TYPES = ['winTheme', 'principle'] as const
+export type AlignmentTargetType = (typeof ALIGNMENT_TARGET_TYPES)[number]
+
+export interface AlignmentResponseContent {
+  status: AlignmentStatus
+  feedback: string
+  refinements: string
+  questions: string
+  ownerComments: string
+}
+
+/** A facilitator's record of how the Owner responded to one item in one session. Alignment is not formal approval. */
+export interface AlignmentResponse extends AlignmentResponseContent {
+  id: ID
+  sessionId: ID | null
+  target: { type: AlignmentTargetType; id: ID }
+  recordedBy: ID
+  at: ISODate
+}
+
+export const DIRECTION_STATES = ['bsa_proposed', 'owner_reviewed', 'aligned', 'revision'] as const
+export type DirectionState = (typeof DIRECTION_STATES)[number]
+
+export interface DirectionContent {
+  pointOfView: PointOfViewContent | null
+  vision: { id: ID; code: string; statement: string; narrative: string; status: ApprovalStatus }[]
+  principles: { id: ID; code: string; title: string; statement: string; intent: string; category: PrincipleCategory; whyItMatters: string; designImplications: string; status: ApprovalStatus; version: number }[]
+  opportunities: { id: ID; code: string; title: string; description: string; principleIds: ID[]; state: OpportunityState }[]
+  outcomes: { id: ID; code: string; statement: string; principleId: ID; category: OutcomeCategory; state: OutcomeState }[]
+  /** Latest recorded Owner response per item at the time of the snapshot. */
+  alignment: { type: AlignmentTargetType; id: ID; code: string; status: AlignmentStatus; refinements: string }[]
+}
+
+/** An immutable record of the direction at a point in time. Never edited or deleted, so an aligned version stays recoverable. */
+export interface DirectionSnapshot {
+  id: ID
+  code: string
+  label: string
+  state: DirectionState
+  note: string
+  sessionId: ID | null
+  at: ISODate
+  by: ID
+  content: DirectionContent
+}
+
 export interface ProjectData {
   project: Project
   people: Person[]
@@ -748,6 +801,10 @@ export interface ProjectData {
   opportunities: DesignOpportunity[]
   /** Interpret: what success could look like (no targets required). */
   outcomes: PotentialOutcome[]
+  /** Align: Owner responses to the vision and principles, captured per session. */
+  alignment: AlignmentResponse[]
+  /** Align: immutable snapshots of the direction (proposed, Owner-reviewed, aligned, revisions). */
+  directions: DirectionSnapshot[]
   /** Recoverable deletions (supports undo and accidental-deletion recovery). */
   trash: TrashItem[]
   /** Monotonic revision for optimistic concurrency. */

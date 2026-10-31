@@ -3,7 +3,7 @@
  * Represents a fictional BSA team preparing for the second Owner meeting.
  * Every reference points to synthetic statements in demoProject.ts.
  */
-import type { DesignOpportunity, HeardItem, NodeRef, PointOfView, PotentialOutcome } from '@/domain/types'
+import type { AlignmentResponse, DesignOpportunity, HeardItem, NodeRef, PointOfView, PotentialOutcome } from '@/domain/types'
 
 const AT = '2026-10-20T15:00:00.000Z'
 const S = (n: number): NodeRef => ({ type: 'statement', id: `st-${n}` })
@@ -169,5 +169,29 @@ export function demoOutcomes(by: string): PotentialOutcome[] {
       possibleMeasures: 'Schedule variance against the committed go-live.',
       evidenceOfProgress: [{ id: 'pr-2', date: '2026-10-01', kind: 'performance_analysis', note: 'Monthly schedule update reports no variance (synthetic record).', addedBy: by }],
     }),
+  ]
+}
+
+/** Synthetic Owner responses recorded at the earlier session (WS-01). The vision was not discussed there. */
+export function demoAlignment(by: string): AlignmentResponse[] {
+  const at = '2026-07-29T18:15:00.000Z'
+  const r = (id: string, status: AlignmentResponse['status'], o: Partial<AlignmentResponse> = {}): AlignmentResponse => ({
+    id: `al-${id}`,
+    sessionId: 'ws-1',
+    target: { type: 'principle', id },
+    status,
+    feedback: '',
+    refinements: '',
+    questions: '',
+    ownerComments: '',
+    recordedBy: by,
+    at,
+    ...o,
+  })
+  return [
+    r('gp-1', 'aligned', { ownerComments: 'Make sure "foreseeable disruption" includes equipment failure.' }),
+    r('gp-2', 'aligned'),
+    r('gp-3', 'needs_discussion', { feedback: 'Growth is clear; automation refresh is not.', questions: 'Should the principle name automation refresh explicitly?' }),
+    r('gp-4', 'aligned_with_refinements', { refinements: 'Acknowledge the tension with a compact footprint.', ownerComments: 'Retention is our biggest operational risk.' }),
   ]
 }

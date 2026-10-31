@@ -1,5 +1,6 @@
+import { alignmentItems } from './alignment'
 import { isActiveFramework, wordingOf } from './wording'
-import type { ApprovalStatus, GuidingPrinciple, ID, ProjectData, WinTheme, WorkshopSession } from './types'
+import type { AlignmentStatus, ApprovalStatus, GuidingPrinciple, ID, ProjectData, WinTheme, WorkshopSession } from './types'
 
 export type FrameworkKind = 'winTheme' | 'principle'
 export type FrameworkItem = (WinTheme & { kind: 'winTheme' }) | (GuidingPrinciple & { kind: 'principle' })
@@ -60,6 +61,27 @@ export interface MeetingSummary {
   merges: string[]
   wordingChanges: WordingChange[]
   changeCount: number
+  /** Owner responses recorded in this session, in presentation order. */
+  alignment: AlignmentEntry[]
+  /** Items presented for alignment with no response recorded in this session. Silence is not alignment. */
+  notReviewed: { code: string; title: string }[]
+  direction: {
+    vision: { code: string; statement: string; narrative: string; status: ApprovalStatus } | null
+    principles: { code: string; title: string; statement: string; status: AlignmentStatus }[]
+    opportunities: { code: string; title: string; principles: string[] }[]
+    outcomesToValidate: { code: string; statement: string; principle: string }[]
+  }
+  strategicQuestions: string[]
+}
+
+export interface AlignmentEntry {
+  code: string
+  title: string
+  status: AlignmentStatus
+  feedback: string
+  refinements: string
+  questions: string
+  ownerComments: string
 }
 
 /**
@@ -127,5 +149,44 @@ export function meetingSummary(data: ProjectData, sessionId: ID, now = new Date(
     merges: session.log.filter((l) => l.action === 'principle.merge').map((l) => l.summary),
     wordingChanges,
     changeCount: session.log.length,
+    ...alignmentSummary(data, session),
+  }
+}
+
+function alignmentSummary(data: ProjectData, session: WorkshopSession) {
+  const items = alignmentItems(data)
+  const inSession = (type: string, id: ID) => data.alignment.find((r) => r.sessionId === session.id && r.target.type === type && r.target.id === id)
+  const alignment: AlignmentEntry[] = []
+  const notReviewed: { code: string; title: string }[] = []
+  for (const i of items) {
+    const r = inSession(i.type, i.id)
+    if (!r || r.status === 'not_reviewed') notReviewed.push({ code: i.code, title: i.title })
+    else alignment.push({ code: i.code, title: i.title, status: r.status, feedback: r.feedback, refinements: r.refinements, questions: r.questions, ownerComments: r.ownerComments })
+  }
+  const vision =
+    data.winThemes.find((w) => w.status === 'approved') ??
+    data.winThemes.find((w) => isActiveFramework(w.status) && w.status !== 'not_adopted' && ['aligned', 'aligned_with_refinements'].includes(inSession('winTheme', w.id)?.status ?? '')) ??
+    data.winThemes.find((w) => w.status === 'in_review') ??
+    data.winThemes.find((w) => isActiveFramework(w.status) && w.status !== 'not_adopted') ??
+    null
+  const principles = [...data.principles].sort((a, b) => a.order - b.order).filter((p) => isActiveFramework(p.status) && p.status !== 'not_adopted')
+  const code = (pid: ID) => data.principles.find((p) => p.id === pid)?.code ?? ''
+  const strategicQuestions = [
+    ...alignment.filter((a) => a.questions.trim()).map((a) => `${a.code}: ${a.questions.trim()}`),
+    ...data.questions.filter((q) => q.status === 'open').map((q) => q.question),
+  ]
+  return {
+    alignment,
+    notReviewed,
+    direction: {
+      vision: vision ? { code: vision.code, statement: vision.statement, narrative: vision.narrative, status: vision.status } : null,
+      principles: principles.map((p) => ({ code: p.code, title: p.title, statement: p.statement, status: inSession('principle', p.id)?.status ?? 'not_reviewed' })),
+      opportunities: data.opportunities.filter((o) => o.inPresentation).sort((a, b) => a.order - b.order).map((o) => ({ code: o.code, title: o.title, principles: o.principleIds.map(code).filter(Boolean) })),
+      outcomesToValidate: data.outcomes
+        .filter((o) => o.inPresentation && o.state !== 'validated_with_owner')
+        .sort((a, b) => a.order - b.order)
+        .map((o) => ({ code: o.code, statement: o.statement, principle: code(o.principleId) })),
+    },
+    strategicQuestions,
   }
 }

@@ -1,3 +1,4 @@
+import { alignmentGaps, directionContent } from './alignment'
 import { evaluateCba } from './cba'
 import { lockedDriverFingerprint } from './drivers'
 import { newId, nextCode } from './ids'
@@ -6,6 +7,10 @@ import { parseCommand, type Command, type CommandOf, type CommandType } from './
 import { nodeExists, sameRef } from './traceability'
 import { wordingOf } from './wording'
 import type {
+  AlignmentStatus,
+  DirectionSnapshot,
+  PointOfView,
+  PointOfViewContent,
   ApprovalStatus,
   Confidence,
   DesignDriver,
@@ -114,6 +119,9 @@ const REQUIRED: Record<CommandType, Capability> = {
   'workshop.create': 'workshop.facilitate',
   'workshop.update': 'workshop.facilitate',
   'workshop.setNote': 'workshop.facilitate',
+  'alignment.record': 'workshop.facilitate',
+  'direction.snapshot': 'framework.edit',
+  'direction.restore': 'framework.edit',
   'workshop.start': 'workshop.facilitate',
   'workshop.end': 'workshop.facilitate',
   'framework.openRevision': 'framework.edit',
@@ -190,11 +198,23 @@ export function applyCommand(data: ProjectData, input: unknown, context: Command
 }
 
 /** Framework changes made while a workshop is live are recorded in the session log. */
-const LOGGED_IN_WORKSHOP = /^(winTheme\.|principle\.(create|edit|merge|reorder)|framework\.)/
+const LOGGED_IN_WORKSHOP = /^(winTheme\.|principle\.(create|edit|merge|reorder)|framework\.|alignment\.)/
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const ALIGNMENT_WORDS: Record<AlignmentStatus, string> = { not_reviewed: 'Not yet reviewed', aligned: 'Aligned', aligned_with_refinements: 'Aligned with refinements', needs_discussion: 'Needs further discussion' }
+
+function recordSnapshot(d: ProjectData, x: Ctx, label: string, state: DirectionSnapshot['state'], sessionId: ID | null, note: string): DirectionSnapshot {
+  const snap: DirectionSnapshot = { id: newId(), code: nextCode('DIR', d.directions.map((s) => s.code)), label, state, note, sessionId, at: x.now, by: x.actorId, content: directionContent(d) }
+  d.directions.push(snap)
+  return snap
+}
+
+function povContent(p: PointOfView): PointOfViewContent {
+  return { centralAmbition: p.centralAmbition, opportunity: p.opportunity, connectingIdea: p.connectingIdea, tensions: p.tensions, distinctiveness: p.distinctiveness, keepInMind: p.keepInMind, alternatives: p.alternatives }
+}
 
 function find<T extends { id: ID }>(list: T[], id: ID, what: string): T {
   const item = list.find((x) => x.id === id)
@@ -1190,6 +1210,76 @@ const handlers: Handlers = {
     else delete w.notes[c.itemKey]
     return { summary: `Updated facilitator notes in ${w.code}` }
   },
+  // ---------------- Align ----------------
+  'alignment.record': (d, c, x) => {
+    if (c.sessionId) find(d.workshops, c.sessionId, 'Workshop')
+    const item = c.target.type === 'winTheme' ? find(d.winThemes, c.target.id, 'Vision') : find(d.principles, c.target.id, 'Guiding Principle')
+    const existing = d.alignment.find((r) => r.sessionId === c.sessionId && r.target.type === c.target.type && r.target.id === c.target.id)
+    if (existing) Object.assign(existing, c.response, { recordedBy: x.actorId, at: x.now })
+    else d.alignment.push({ id: newId(), sessionId: c.sessionId, target: { ...c.target }, ...c.response, recordedBy: x.actorId, at: x.now })
+    return { summary: `Recorded Owner response to ${item.code}: ${ALIGNMENT_WORDS[c.response.status]}`, target: ref(c.target.type, item.id) }
+  },
+  'direction.snapshot': (d, c, x) => {
+    if (c.state === 'owner_reviewed' || c.state === 'aligned') x.require('workshop.facilitate')
+    if (c.sessionId) find(d.workshops, c.sessionId, 'Workshop')
+    if (c.state === 'aligned') {
+      const gaps = alignmentGaps(d)
+      if (!gaps.ready)
+        throw new DomainError(
+          `The direction cannot be recorded as aligned yet: ${gaps.blocking.map((b) => `${b.code} (${ALIGNMENT_WORDS[b.status].toLowerCase()})`).join(', ') || 'record the Owner’s response to the vision and principles first'}.`,
+        )
+    }
+    const s = recordSnapshot(d, x, c.label, c.state, c.sessionId, c.note)
+    return { summary: `Saved direction ${s.code} — ${c.label}`, createdId: s.id }
+  },
+  'direction.restore': (d, c, x) => {
+    const snap = find(d.directions, c.id, 'Direction snapshot')
+    const note = `Restored from ${snap.code}`
+    const restored: string[] = []
+    const skipped: string[] = []
+    for (const sp of snap.content.principles) {
+      const p = d.principles.find((q) => q.id === sp.id)
+      if (!p) {
+        skipped.push(`${sp.code} (deleted)`)
+        continue
+      }
+      p.whyItMatters = sp.whyItMatters
+      p.designImplications = sp.designImplications
+      const content: PrincipleContent = { title: sp.title, statement: sp.statement, intent: sp.intent, category: sp.category }
+      if (JSON.stringify(principleContent(p)) === JSON.stringify(content)) continue
+      if (p.status === 'approved' || p.status === 'superseded') {
+        skipped.push(`${p.code} (${p.status === 'approved' ? 'approved — open a revision first' : 'superseded'})`)
+        continue
+      }
+      Object.assign(p, content)
+      pushVersion<PrincipleContent, ApprovalStatus>(p, content, p.status, x, note)
+      restored.push(p.code)
+    }
+    for (const sv of snap.content.vision) {
+      const w = d.winThemes.find((q) => q.id === sv.id)
+      if (!w) {
+        skipped.push(`${sv.code} (deleted)`)
+        continue
+      }
+      const content: WinThemeContent = { statement: sv.statement, narrative: sv.narrative }
+      if (JSON.stringify(winThemeContent(w)) === JSON.stringify(content)) continue
+      if (w.status === 'approved' || w.status === 'superseded') {
+        skipped.push(`${w.code} (${w.status === 'approved' ? 'approved — open a revision first' : 'superseded'})`)
+        continue
+      }
+      Object.assign(w, content)
+      pushVersion<WinThemeContent, ApprovalStatus>(w, content, w.status, x, note)
+      restored.push(w.code)
+    }
+    if (snap.content.pointOfView && JSON.stringify(snap.content.pointOfView) !== JSON.stringify(d.pointOfView && povContent(d.pointOfView))) {
+      const history = d.pointOfView?.history ?? []
+      history.push({ at: x.now, by: x.actorId, snapshot: structuredClone(snap.content.pointOfView) })
+      d.pointOfView = { ...structuredClone(snap.content.pointOfView), updatedBy: x.actorId, updatedAt: x.now, history: history.slice(-50) }
+      restored.push('point of view')
+    }
+    return { summary: `Restored wording from ${snap.code}: ${restored.length ? restored.join(', ') : 'nothing changed'}${skipped.length ? `; not restored: ${skipped.join(', ')}` : ''}` }
+  },
+
   'workshop.start': (d, c, x) => {
     const w = find(d.workshops, c.id, 'Workshop')
     const other = d.workshops.find((o) => o.status === 'live' && o.id !== w.id)
@@ -1198,6 +1288,8 @@ const handlers: Handlers = {
     w.status = 'live'
     w.startedAt = w.startedAt ?? x.now
     w.facilitatorId = x.actorId
+    // Preserve the direction exactly as BSA proposed it before the conversation changes anything.
+    if (!d.directions.some((s) => s.sessionId === w.id && s.state === 'bsa_proposed')) recordSnapshot(d, x, `As presented — ${w.code}`, 'bsa_proposed', w.id, 'Recorded automatically when the session started.')
     return { summary: `Started workshop ${w.code}` }
   },
   'workshop.end': (d, c, x) => {
@@ -1205,6 +1297,7 @@ const handlers: Handlers = {
     if (w.status !== 'live') throw new DomainError('Only a live session can be ended.')
     w.status = 'closed'
     w.endedAt = x.now
+    recordSnapshot(d, x, `After ${w.code}`, 'owner_reviewed', w.id, 'Recorded automatically when the session ended. Owner-reviewed is not the same as aligned.')
     return { summary: `Ended workshop ${w.code} (${w.log.length} recorded change(s))` }
   },
 

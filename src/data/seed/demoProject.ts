@@ -30,7 +30,8 @@ import type {
   VersionEntry,
 } from '@/domain/types'
 import { wordingOf } from '@/domain/wording'
-import { demoHeard, demoOpportunities, demoOutcomes, demoPointOfView, PRINCIPLE_SUPPORT } from './compass2'
+import { directionContent } from '@/domain/alignment'
+import { demoAlignment, demoHeard, demoOpportunities, demoOutcomes, demoPointOfView, PRINCIPLE_SUPPORT } from './compass2'
 
 export const DEMO_PROJECT_ID = 'demo-pharmacy'
 export const DEMO_PROJECT_2_ID = 'demo-learning'
@@ -450,7 +451,7 @@ export function createDemoProject(): ProjectData {
     ['in_review', { statement: 'Every Dose. Every Patient. Every Tomorrow.', narrative: 'Behind every order is a person waiting on a specific dose. This facility exists to make that promise unbreakable — today, through any disruption, and as needs grow tomorrow.' }, 'Submitted for review', '2026-07-15T15:00:00.000Z'],
   ])
 
-  return {
+  const data: ProjectData = {
     project: {
       id: DEMO_PROJECT_ID,
       code: 'MVH-SPF',
@@ -567,8 +568,23 @@ export function createDemoProject(): ProjectData {
       { id: 'au-2', at: '2026-10-15T15:00:00.000Z', actorId: P.priya.id, action: 'driver.recordMeasurement', target: DD(12), summary: 'Recorded DD-12 observation: 12 median days (as of 2026-10-15)' },
       { id: 'au-1', at: '2026-09-22T15:00:00.000Z', actorId: P.morgan.id, action: 'driver.verify', target: DD(8), summary: 'Verified DD-08: achieved' },
     ],
+    alignment: demoAlignment(P.avery.id),
+    directions: [],
     revision: 1,
   }
+  // The team saved the direction it intends to present at WS-02.
+  data.directions.push({
+    id: 'dir-1',
+    code: 'DIR-01',
+    label: 'Prepared for WS-02',
+    state: 'bsa_proposed',
+    note: 'Synthetic: the direction BSA plans to present at the second Owner meeting.',
+    sessionId: 'ws-2',
+    at: '2026-10-28T15:00:00.000Z',
+    by: P.avery.id,
+    content: directionContent(data),
+  })
+  return data
 }
 
 // ---------------------------------------------------------------------------
@@ -647,6 +663,8 @@ export function createEmptyProject(o: {
     pointOfView: null,
     opportunities: [],
     outcomes: [],
+    alignment: [],
+    directions: [],
     audit: [],
     workshops: [],
     trash: [],

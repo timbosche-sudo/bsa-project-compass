@@ -1,4 +1,6 @@
 import type {
+  AlignmentStatus,
+  DirectionState,
   ApprovalStatus,
   Confidence,
   Confidentiality,
@@ -194,6 +196,20 @@ export const OUTCOME_STATE_LABELS: Record<OutcomeState, string> = {
   proposed_by_bsa: 'Proposed by BSA',
   validated_with_owner: 'Validated with Owner',
   define_later: 'To be defined later',
+}
+
+export const ALIGNMENT_STATUS_LABELS: Record<AlignmentStatus, string> = {
+  not_reviewed: 'Not yet reviewed',
+  aligned: 'Aligned',
+  aligned_with_refinements: 'Aligned with refinements',
+  needs_discussion: 'Needs further discussion',
+}
+
+export const DIRECTION_STATE_LABELS: Record<DirectionState, string> = {
+  bsa_proposed: 'BSA proposed direction',
+  owner_reviewed: 'Owner-reviewed direction',
+  aligned: 'Aligned direction',
+  revision: 'Subsequent revision',
 }
 
 export const PROGRESS_KIND_LABELS: Record<ProgressKind, string> = {
