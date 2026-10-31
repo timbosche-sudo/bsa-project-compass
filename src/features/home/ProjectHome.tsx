@@ -7,12 +7,13 @@ import { ApprovalBadge } from '@/components/StatusBadge'
 import { Badge, Card, CardHeader, cx } from '@/components/ui'
 import { PHASE_LABELS, SECTOR_LABELS } from '@/domain/labels'
 import type { ProjectData } from '@/domain/types'
+import { alignmentStatusOf, latestAlignedDirection } from '@/domain/alignment'
 import { isActiveFramework } from '@/domain/wording'
 
 type Stage = 'understand' | 'interpret' | 'align'
 
 /** Meaningful activity only — routine link reviews and reorders are left to the audit log. */
-const MEANINGFUL = /^(source\.create|heard\.(create|update)|pov\.update|framework\.(create|edit|submit|approve|openRevision)|principle\.(edit|merge|updateSupport)|winTheme\.edit|opportunity\.create|outcome\.(create|addProgress)|theme\.(create|promote)|workshop\.(start|end|approve.*)|question\.(create|resolve))/
+const MEANINGFUL = /^(direction\.(snapshot|restore)|alignment\.record|source\.create|heard\.(create|update)|pov\.update|framework\.(create|edit|submit|approve|openRevision)|principle\.(edit|merge|updateSupport)|winTheme\.edit|opportunity\.create|outcome\.(create|addProgress)|theme\.(create|promote)|workshop\.(start|end|approve.*)|question\.(create|resolve))/
 
 export function readiness(data: ProjectData) {
   const principles = data.principles.filter((p) => isActiveFramework(p.status))
@@ -26,6 +27,8 @@ export function readiness(data: ProjectData) {
     { label: 'Design opportunities explored', done: data.opportunities.length > 0, to: 'interpret/opportunities', stage: 'interpret' },
     { label: 'Potential outcomes considered', done: data.outcomes.length > 0, to: 'interpret/success', stage: 'interpret' },
     { label: 'Owner alignment conversation held', done: data.workshops.some((w) => w.status === 'closed'), to: 'align', stage: 'align' },
+    { label: 'Owner responses recorded for every principle', done: principles.length > 0 && principles.every((p) => alignmentStatusOf(data, 'principle', p.id) !== 'not_reviewed'), to: 'align/alignment', stage: 'align' },
+    { label: 'Aligned direction recorded', done: !!latestAlignedDirection(data), to: 'align/history', stage: 'align' },
   ]
   const current: Stage = items.find((i) => !i.done)?.stage ?? 'align'
   return { items, current }

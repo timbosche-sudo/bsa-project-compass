@@ -16,7 +16,7 @@ import { AppShell } from '@/layout/AppShell'
 import { BsaLogo } from '@/brand/BsaLogo'
 import ProjectHome from '@/features/home/ProjectHome'
 import { LegacyAlignment, LegacyIntelligence, LegacyVision } from '@/features/redirects'
-import { InterpretStage, MoreStage, UnderstandStage } from '@/layout/stages'
+import { AlignStage, InterpretStage, MoreStage, UnderstandStage } from '@/layout/stages'
 import { NewProjectDialog } from '@/features/settings/NewProjectDialog'
 
 const IntelligencePage = lazy(() => import('@/features/intelligence/IntelligencePage'))
@@ -29,6 +29,9 @@ const PrinciplesPage = lazy(() => import('@/features/interpret/PrinciplesPage'))
 const OpportunitiesPage = lazy(() => import('@/features/interpret/OpportunitiesPage'))
 const SuccessPage = lazy(() => import('@/features/interpret/SuccessPage'))
 const AlignPage = lazy(() => import('@/features/align/AlignPage'))
+const PresentationPage = lazy(() => import('@/features/align/PresentationPage'))
+const OwnerAlignmentPage = lazy(() => import('@/features/align/OwnerAlignmentPage'))
+const DirectionHistoryPage = lazy(() => import('@/features/align/DirectionHistoryPage'))
 const FromVisionToDesignPage = lazy(() => import('@/features/more/FromVisionToDesignPage'))
 const EvidenceMapPage = lazy(() => import('@/features/more/EvidenceMapPage'))
 const SourceDetailPage = lazy(() => import('@/features/intelligence/SourceDetailPage'))
@@ -92,7 +95,16 @@ const router = createBrowserRouter(
                 { path: 'success', element: page(<SuccessPage />) },
               ],
             },
-            { path: 'align', element: page(<AlignPage />) },
+            {
+              path: 'align',
+              element: <AlignStage />,
+              children: [
+                { index: true, element: page(<AlignPage />) },
+                { path: 'presentation', element: page(<PresentationPage />) },
+                { path: 'alignment', element: page(<OwnerAlignmentPage />) },
+                { path: 'history', element: page(<DirectionHistoryPage />) },
+              ],
+            },
             {
               path: 'more',
               element: <MoreStage />,

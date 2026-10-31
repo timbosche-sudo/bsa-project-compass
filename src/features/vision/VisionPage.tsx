@@ -4,10 +4,12 @@ import { Link, useSearchParams } from 'react-router'
 import { useProject } from '@/app/project'
 import { CommentThread, formatDate, VersionHistory } from '@/components/Collaboration'
 import { Dialog, useConfirm } from '@/components/Dialog'
+import { AlignmentBadge } from '@/components/AlignmentBadge'
 import { EditableText } from '@/components/EditableText'
 import { EvidencePanel } from '@/components/Evidence'
 import { ApprovalBadge, DriverStatusBadge } from '@/components/StatusBadge'
 import { Badge, Button, Callout, Card, CardHeader, cx, EmptyState, Field, Input, KeyValue, optionsFrom, Select, Tabs, Textarea } from '@/components/ui'
+import { alignmentStatusOf } from '@/domain/alignment'
 import { driverStatus, principleDriverIds } from '@/domain/drivers'
 import { CATEGORY_LABELS, OPPORTUNITY_STATE_LABELS } from '@/domain/labels'
 import { evidenceFor, isOwnerEvidence, isWorkshopEvidence } from '@/domain/traceability'
@@ -106,6 +108,7 @@ function WinThemeCard({ w, onEdit }: { w: WinTheme; onEdit: () => void }) {
             {w.code} · v{w.version}
           </span>
           <ApprovalBadge status={w.status} />
+          <AlignmentBadge prefix="Owner:" status={alignmentStatusOf(data, 'winTheme', w.id)} />
           {locked && (
             <Badge tone="ok">
               <Lock className="size-3" /> Locked
@@ -390,6 +393,7 @@ function PrincipleDetail({ p }: { p: GuidingPrinciple }) {
             {p.code} · v{p.version}
           </span>
           <ApprovalBadge status={p.status} />
+          <AlignmentBadge prefix="Owner:" status={alignmentStatusOf(data, 'principle', p.id)} />
           <Badge tone="outline">{CATEGORY_LABELS[p.category]}</Badge>
           {locked && (
             <Badge tone="ok">

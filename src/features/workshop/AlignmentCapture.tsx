@@ -1,11 +1,12 @@
 import { HelpCircle } from 'lucide-react'
 import { useRef } from 'react'
 import { useProject } from '@/app/project'
+import { ALIGNMENT_TONE } from '@/components/AlignmentBadge'
 import { formatDate } from '@/components/Collaboration'
 import { Button, cx } from '@/components/ui'
 import { latestAlignment } from '@/domain/alignment'
 import { ALIGNMENT_STATUS_LABELS } from '@/domain/labels'
-import { ALIGNMENT_STATUSES, type AlignmentResponseContent, type AlignmentStatus, type AlignmentTargetType, type WorkshopSession } from '@/domain/types'
+import { ALIGNMENT_STATUSES, type AlignmentResponseContent, type AlignmentTargetType, type WorkshopSession } from '@/domain/types'
 import { AutoNotes } from './FacilitatorPanel'
 
 const FIELDS: { key: Exclude<keyof AlignmentResponseContent, 'status'>; label: string; placeholder: string }[] = [
@@ -15,12 +16,7 @@ const FIELDS: { key: Exclude<keyof AlignmentResponseContent, 'status'>; label: s
   { key: 'ownerComments', label: 'Owner comments', placeholder: 'Notable comments, in the Owner’s words…' },
 ]
 
-export const ALIGNMENT_TONE: Record<AlignmentStatus, string> = {
-  aligned: 'bg-ok-fill',
-  aligned_with_refinements: 'bg-info-fill',
-  needs_discussion: 'bg-warn-fill',
-  not_reviewed: 'bg-line-strong',
-}
+export { ALIGNMENT_TONE }
 
 /**
  * Records how the Owner responded to one item in a session. This is not a formal

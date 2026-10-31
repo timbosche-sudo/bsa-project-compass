@@ -58,3 +58,21 @@ export function MoreStage() {
     />
   )
 }
+
+export function AlignStage() {
+  return (
+    <StageLayout
+      stage={{
+        number: '03',
+        name: 'Align',
+        purpose: 'Build shared ownership with the Owner. Lead with BSA’s recommendation, invite discussion, record how the Owner responds, and keep every version of the direction recoverable.',
+        steps: [
+          { to: 'align', label: 'Prepare', end: true },
+          { to: 'align/presentation', label: 'Presentation' },
+          { to: 'align/alignment', label: 'Owner Alignment' },
+          { to: 'align/history', label: 'Direction History' },
+        ],
+      }}
+    />
+  )
+}

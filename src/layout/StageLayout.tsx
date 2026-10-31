@@ -11,6 +11,7 @@ export interface StageStep {
   to: string
   label: string
   hint?: string
+  end?: boolean
 }
 
 export interface StageDef {
@@ -55,6 +56,7 @@ export function StageLayout({ stage }: { stage: StageDef }) {
             <NavLink
               key={s.to}
               to={`${base}/${s.to}`}
+              end={s.end}
               title={s.hint}
               className={({ isActive }) =>
                 cx(

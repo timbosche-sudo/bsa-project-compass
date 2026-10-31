@@ -303,6 +303,9 @@ const STEP_LABELS: Record<string, string> = {
   success: 'What Success Could Look Like',
   'from-vision-to-design': 'From Vision to Design',
   'evidence-map': 'Evidence Map',
+  presentation: 'Presentation',
+  alignment: 'Owner Alignment',
+  history: 'Direction History',
 }
 
 function Breadcrumbs() {

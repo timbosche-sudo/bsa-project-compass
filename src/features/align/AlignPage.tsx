@@ -20,14 +20,13 @@ export default function AlignPage() {
     { label: `${t.guidingPrinciple}s with “why it matters”`, ok: principles.length > 0 && principles.every((p) => !!p.whyItMatters), to: 'interpret/principles' },
     { label: 'Design opportunities selected for the presentation', ok: data.opportunities.some((o) => o.inPresentation), to: 'interpret/opportunities' },
     { label: 'Potential outcomes selected for the presentation', ok: data.outcomes.some((o) => o.inPresentation), to: 'interpret/success' },
-    { label: 'Open questions to raise with the Owner', ok: true, to: 'understand/questions' },
+    { label: 'The direction to present is saved as a version', ok: data.directions.some((d) => d.state === 'bsa_proposed'), to: 'align/history' },
   ]
   return (
     <div>
       <PageHeader
-        eyebrow="03 Align"
-        title="Align"
-        description="Build shared ownership with the Owner. Present what we heard and the emerging direction, refine the language together, and capture where the Owner is aligned."
+        title="Prepare"
+        description="Get ready for the Owner conversation: check what is ready to present, and plan or review workshop sessions."
         actions={
           <Link to={`${base}/workshop`}>
             <Button variant="primary" icon={<Presentation className="size-4" />}>

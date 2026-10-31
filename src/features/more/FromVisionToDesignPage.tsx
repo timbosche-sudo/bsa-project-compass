@@ -2,9 +2,11 @@ import { ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useProject } from '@/app/project'
+import { AlignmentBadge } from '@/components/AlignmentBadge'
 import { LinkedChips } from '@/components/Evidence'
 import { Badge, Card, cx, EmptyState, PageHeader } from '@/components/ui'
 import { OPPORTUNITY_STATE_LABELS, OUTCOME_STATE_LABELS } from '@/domain/labels'
+import { alignmentStatusOf, latestAlignedDirection } from '@/domain/alignment'
 import { evidenceFor } from '@/domain/traceability'
 import { isActiveFramework } from '@/domain/wording'
 import { ProgressList } from '@/features/interpret/progress'
@@ -21,6 +23,12 @@ export default function FromVisionToDesignPage() {
   const base = `/projects/${data.project.id}`
   const vision = data.winThemes.find((w) => w.status === 'approved') ?? data.winThemes.find((w) => w.status === 'in_review') ?? data.winThemes.find((w) => w.status === 'proposed')
   const principles = data.principles.filter((p) => isActiveFramework(p.status)).sort((a, b) => a.order - b.order)
+  const aligned = latestAlignedDirection(data)
+  const changedSinceAlignment = (id: string, title: string, statement: string) => {
+    if (!aligned) return false
+    const then = aligned.content.principles.find((p) => p.id === id)
+    return !then || then.title !== title || then.statement !== statement
+  }
 
   return (
     <div>
@@ -38,6 +46,19 @@ export default function FromVisionToDesignPage() {
         <div className="mb-6 rounded-lg border-l-4 border-accent bg-surface px-5 py-4 shadow-card">
           <div className="eyebrow">{t.winTheme}</div>
           <p className="mt-1 text-[22px] leading-snug font-bold tracking-tight">{vision.statement}</p>
+          <p className="mt-2 text-[12.5px] text-muted">
+            {aligned ? (
+              <>
+                Reference: aligned direction{' '}
+                <Link className="underline" to={`${base}/align/history?version=${aligned.id}`}>
+                  {aligned.code} {aligned.label}
+                </Link>
+                . Principles changed since alignment are flagged.
+              </>
+            ) : (
+              <>No aligned direction has been recorded yet — this shows the current working direction.</>
+            )}
+          </p>
         </div>
       )}
       {principles.length === 0 && <EmptyState title="Nothing to trace yet">Draft principles in Interpret to see how they carry into the design.</EmptyState>}
@@ -58,6 +79,10 @@ export default function FromVisionToDesignPage() {
                     </h2>
                   </Link>
                   <p className="mt-1 text-[13px] text-ink-2">{p.statement}</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <AlignmentBadge prefix="Owner:" status={alignmentStatusOf(data, 'principle', p.id)} />
+                    {changedSinceAlignment(p.id, p.title, p.statement) && <Badge tone="warn">Changed since alignment</Badge>}
+                  </div>
                   {p.whyItMatters && (
                     <p className="mt-3 text-[12.5px] text-muted">
                       <span className="font-semibold text-ink-2">Why it matters. </span>
