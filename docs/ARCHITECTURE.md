@@ -48,13 +48,14 @@ The repository was empty: there was no existing code, no design-system files and
 | `src/domain/metrics.ts` | Dashboard model and filters |
 | `src/data/*` | Adapters (demo/remote), PKCE auth, config, synthetic seed |
 | `src/services/ai/*` | Provider interface, rule-based provider, remote AI provider, output schema |
-| `src/exporters/*` | CSV (injection-safe), XLSX, PDF report and decision record, PPTX deck |
+| `src/exporters/*` | CSV (injection-safe), XLSX, PDF report and decision record, PPTX decks (Owner presentation, driver briefing), Word/PDF documents from a shared outline (`outline.ts`, `documents.ts`, `deliverables.ts`) |
 | `src/components/*` | Design-system primitives, dialogs and confirmations, evidence, comments, versions |
 | `src/layout/AppShell.tsx` | Navigation (Home · Understand · Interpret · Align · Reports · More tools), breadcrumbs, search, project and persona switchers, demo banner |
 | `src/layout/StageLayout.tsx`, `stages.tsx` | Stage header, step navigation and Thinking Partner drawer for Understand, Interpret and More tools |
 | `src/features/*` | Pages for each primary section (`home`, `understand`, `interpret`, `align`, `more`, plus the Compass 1.x feature folders they reuse) |
 | `src/features/workshop/*` | Owner Workshop: slide deck, inline editing with autosave and recovery, undo/redo, facilitator panel, dialogs, audience window |
 | `src/domain/workshop.ts`, `wording.ts`, `normalize.ts` | Meeting summary model, canonical wording, data upgrades |
+| `src/domain/alignment.ts` | Owner alignment status, readiness for an aligned direction, direction snapshots |
 | `supabase/migrations/*` | Schema, RLS, storage bucket, append-only audit, admin invariant |
 | `supabase/functions/_shared/api.ts` | Framework-independent API handler (unit-tested) |
 | `supabase/functions/api/index.ts` | Deno entry: token verification, CORS, Postgres store, AI adapter |
@@ -101,6 +102,10 @@ Verification: 11 domain tests, plus 8 end-to-end flows at 1920×1080, 1440×900 
 ### Compass 2.0 Stage 2: Understand → Interpret (implemented for review)
 
 New navigation and Project Home; What We Heard, Point of View, principle support text, Design Opportunities, Potential Outcomes and From Vision to Design; rules-based Thinking Partner checks; and legacy URL redirects. See [COMPASS_2_STAGE2.md](COMPASS_2_STAGE2.md).
+
+### Compass 2.0 Stage 3: Owner Alignment and Deliverables (implemented)
+
+Four-chapter Owner presentation, Owner response capture (`AlignmentResponse`), immutable direction versions (`DirectionSnapshot`) with an aligned state that refuses unreviewed items, the Align stage, and the deliverables (editable PPTX, Word and PDF documents from one outline). See [COMPASS_2_STAGE3.md](COMPASS_2_STAGE3.md).
 
 ### Revised roadmap (recommended order)
 

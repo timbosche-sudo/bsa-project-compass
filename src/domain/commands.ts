@@ -1289,7 +1289,7 @@ const handlers: Handlers = {
     w.startedAt = w.startedAt ?? x.now
     w.facilitatorId = x.actorId
     // Preserve the direction exactly as BSA proposed it before the conversation changes anything.
-    if (!d.directions.some((s) => s.sessionId === w.id && s.state === 'bsa_proposed')) recordSnapshot(d, x, `As presented — ${w.code}`, 'bsa_proposed', w.id, 'Recorded automatically when the session started.')
+    recordSnapshot(d, x, `As presented — ${w.code}`, 'bsa_proposed', w.id, 'Recorded automatically when the session started.')
     return { summary: `Started workshop ${w.code}` }
   },
   'workshop.end': (d, c, x) => {

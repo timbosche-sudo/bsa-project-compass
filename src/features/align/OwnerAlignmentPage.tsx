@@ -58,7 +58,7 @@ export default function OwnerAlignmentPage() {
             <EmptyState title="Nothing to align on yet">Draft a vision and principles in Interpret first.</EmptyState>
           ) : (
             <div className="overflow-x-auto">
-              <table className="table-base min-w-[760px]">
+              <table className="table-base min-w-[680px]">
                 <thead>
                   <tr>
                     <th className="w-[34%]">Item</th>
@@ -94,7 +94,7 @@ export default function OwnerAlignmentPage() {
                         <td className="text-right">
                           {can('workshop.facilitate') && session?.status !== 'closed' && (
                             <Button size="sm" variant="ghost" icon={<Pencil className="size-3.5" />} onClick={() => setEditing({ type: i.type, id: i.id, code: i.code })} aria-label={`Record response to ${i.code}`}>
-                              Record
+                              <span className="hidden 2xl:inline">Record</span>
                             </Button>
                           )}
                         </td>

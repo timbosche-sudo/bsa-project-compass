@@ -20,6 +20,12 @@ export default defineConfig({
       name: 'ipad-landscape',
       use: { browserName: 'chromium', viewport: { width: 1366, height: 1024 }, hasTouch: true, deviceScaleFactor: 2 },
     },
+    // iPad Pro 12.9" portrait, for the Compass 2.0 stages and the Owner presentation.
+    {
+      name: 'ipad-portrait',
+      use: { browserName: 'chromium', viewport: { width: 1024, height: 1366 }, hasTouch: true, deviceScaleFactor: 2 },
+      testMatch: /(compass2|align)\.spec/,
+    },
   ],
   webServer: {
     command: `npm run build && npx vite preview --port ${port} --strictPort`,

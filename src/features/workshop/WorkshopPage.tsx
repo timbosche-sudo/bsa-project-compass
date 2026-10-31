@@ -326,7 +326,16 @@ function Workshop() {
       >
         {stage}
         {capture && item && kind && (
-          <div className="absolute inset-y-4 right-4 z-10 flex w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-line bg-raised text-ink shadow-pop" role="dialog" aria-label={`Owner response to ${item.code}`}>
+          <div className="absolute inset-y-4 right-4 z-10 flex w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-line bg-raised text-ink shadow-pop"
+            role="region"
+            aria-label={`Owner response to ${item.code}`}
+            onKeyDownCapture={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation()
+                setCapture(false)
+              }
+            }}
+          >
             <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
               <div>
                 <div className="eyebrow">Owner response · {item.code}</div>
