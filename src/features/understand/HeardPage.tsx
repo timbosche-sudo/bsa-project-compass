@@ -287,7 +287,7 @@ function HeardPreview({ items }: { items: HeardItem[] }) {
         <div className="eyebrow">{data.project.owner.name}</div>
         <h2 className="mt-1 text-[30px] leading-tight font-black tracking-tight">What We Heard</h2>
         <p className="mt-1 text-[13.5px] text-muted">{data.project.name}</p>
-        <div className="mt-8 grid gap-x-10 gap-y-8 lg:grid-cols-2">
+        <div className="mt-8 grid gap-x-10 gap-y-8 @4xl:grid-cols-2">
           {HEARD_SECTIONS.map((section) => {
             const list = shown.filter((i) => i.section === section)
             if (!list.length) return null

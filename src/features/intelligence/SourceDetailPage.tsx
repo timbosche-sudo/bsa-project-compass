@@ -95,7 +95,7 @@ export default function SourceDetailPage() {
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-6 @5xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">
           {image ? (
             <PhotoVerification source={source} image={image} statements={statements} focused={focused} onFocus={(id) => setParams(id ? { statement: id } : {})} />
@@ -176,7 +176,7 @@ function PhotoVerification({ source, image, statements, focused, onFocus }: { so
         title="Original image beside transcription"
         description={toVerify ? `${toVerify} transcription(s) still need verification.` : 'All transcriptions verified.'}
       />
-      <div className="grid gap-0 lg:grid-cols-2">
+      <div className="grid gap-0 @4xl:grid-cols-2">
         <div className="border-b border-line p-4 lg:border-r lg:border-b-0">
           <div className="relative overflow-hidden rounded-md border border-line bg-sunken">
             <img src={image} alt={`${source.title} — original photograph (synthetic illustration)`} className="block w-full" />

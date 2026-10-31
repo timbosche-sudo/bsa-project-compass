@@ -1,7 +1,6 @@
 import { Swords } from 'lucide-react'
 import { useProject } from '@/app/project'
 import { LinkedChips } from '@/components/Evidence'
-import { SuggestionsPanel } from '@/components/SuggestionsPanel'
 import { Card, CardHeader, PageHeader } from '@/components/ui'
 import { QuestionsCard } from '@/features/alignment/ThemesWorkspace'
 
@@ -15,8 +14,8 @@ export default function QuestionsPage() {
         title="Critical Questions"
         description="What we still need to understand. Tensions, missing perspectives and requests that describe a solution rather than a need are recorded as questions — not quietly resolved."
       />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="min-w-0 space-y-6">
+      <div className="grid gap-6 @7xl:grid-cols-2">
+        <div className="contents">
           <QuestionsCard />
           <Card>
             <CardHeader eyebrow="From the evidence" title="Tensions" description="Statements recorded as pulling against each other." />
@@ -34,8 +33,8 @@ export default function QuestionsPage() {
             </ul>
           </Card>
         </div>
-        <SuggestionsPanel tasks={['critical_questions', 'find_missing_requirements']} />
       </div>
+      <p className="mt-4 text-[12.5px] text-muted">Open the Thinking Partner and choose Challenge to look for tensions, missing perspectives and requests that describe a solution rather than a need.</p>
     </div>
   )
 }

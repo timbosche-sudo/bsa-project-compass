@@ -1,0 +1,87 @@
+import { expect, test, type Page } from '@playwright/test'
+
+const P = '/projects/demo-pharmacy'
+
+async function open(page: Page, path: string) {
+  await page.goto('/')
+  await page.evaluate(() => localStorage.clear())
+  await page.goto(`${P}/${path}`)
+  await page.getByRole('button', { name: 'Thinking Partner' }).click()
+  return page.getByRole('complementary', { name: 'Thinking Partner' })
+}
+
+test('Explore: a guided exploration develops a working interpretation on the canvas, which survives a reload', async ({ page }) => {
+  const panel = await open(page, 'understand/themes')
+  await expect(panel).toContainText('Understand · Themes: 7 themes and 28 statements')
+  await panel.getByRole('button', { name: 'Analyze' }).click()
+  await expect(panel.getByRole('status')).toContainText('observations for consideration')
+  const cards = panel.getByRole('article')
+  expect(await cards.count()).toBeLessThanOrEqual(3)
+  await expect(cards.first()).toContainText('Rule-based analysis')
+  await cards.first().getByRole('button', { name: 'Explore further' }).click()
+  await expect(panel).toContainText('Curated exploration pattern')
+  await panel.getByRole('checkbox', { name: 'Compare' }).nth(0).check()
+  await panel.getByRole('checkbox', { name: 'Compare' }).nth(1).check()
+  await expect(panel.getByRole('region', { name: 'Comparison' })).toBeVisible()
+  await panel.getByRole('button', { name: 'Develop this direction' }).first().click()
+  const canvas = panel.getByRole('list', { name: 'Working Canvas' })
+  await expect(canvas.getByRole('listitem').first()).toContainText('Started from rule-based analysis')
+  await canvas.getByRole('radio', { name: 'Worth developing' }).first().click()
+  await page.reload()
+  const again = page.getByRole('complementary', { name: 'Thinking Partner' })
+  await again.getByRole('tab', { name: /Working Canvas \(1\)/ }).click()
+  await expect(again.getByRole('list', { name: 'Working Canvas' }).getByRole('radio', { name: 'Worth developing' })).toHaveAttribute('aria-checked', 'true')
+})
+
+test('Challenge: overlapping principles are questioned for the selected item, and approved wording is untouched', async ({ page }) => {
+  const panel = await open(page, 'interpret/principles?principle=gp-1')
+  const before = await page.getByRole('heading', { name: 'Reliability by Design', level: 3 }).locator('..').textContent()
+  await panel.getByRole('tab', { name: 'Challenge' }).click()
+  await panel.getByRole('radio', { name: /Selected: GP-01/ }).click()
+  await expect(panel).toContainText('Interpret · Guiding Principles: GP-01 Reliability by Design')
+  await panel.getByRole('button', { name: 'Analyze' }).click()
+  const card = panel.getByRole('article').filter({ hasText: 'Potential relationship' })
+  await expect(card).toContainText('Are these distinct commitments, or should their relationship be made more explicit?')
+  await card.getByRole('button', { name: 'Supporting context and evidence' }).click()
+  await expect(card).toContainText('ST-001')
+  await card.getByRole('button', { name: 'Save as question' }).click()
+  await page.goto(`${P}/understand/questions`)
+  await expect(page.getByText('Are these distinct commitments, or should their relationship be made more explicit?')).toBeVisible()
+  await page.goto(`${P}/interpret/principles?principle=gp-1`)
+  expect(await page.getByRole('heading', { name: 'Reliability by Design', level: 3 }).locator('..').textContent()).toBe(before)
+})
+
+test('Challenge: a prescriptive request is identified, and a dismissed suggestion does not come back', async ({ page }) => {
+  const panel = await open(page, 'understand/evidence')
+  await panel.getByRole('tab', { name: 'Challenge' }).click()
+  await panel.getByRole('button', { name: 'Look deeper' }).click()
+  const card = panel.getByRole('article').filter({ hasText: 'ST-019 requests a specific solution' })
+  await expect(card).toContainText('What activity, recovery or support need is motivating this request?')
+  await card.getByRole('button', { name: /^Dismiss/ }).click()
+  await expect(card).toHaveCount(0)
+  await panel.getByRole('button', { name: 'Look deeper' }).click()
+  await expect(panel.getByRole('status')).toContainText('not repeated because nothing has changed')
+  await expect(panel.getByRole('article').filter({ hasText: 'ST-019 requests a specific solution' })).toHaveCount(0)
+})
+
+test('Working Canvas: a reviewed idea is promoted into a draft design opportunity', async ({ page }) => {
+  const panel = await open(page, 'interpret/opportunities')
+  await panel.getByRole('tab', { name: /Working Canvas/ }).click()
+  await panel.getByRole('button', { name: 'New idea' }).click()
+  await panel.getByLabel('Kind of idea').selectOption({ label: 'Potential design opportunity' })
+  await panel.getByLabel('Idea', { exact: true }).fill('Let staff see the state of critical systems')
+  await panel.getByRole('button', { name: 'Add to canvas' }).click()
+  await panel.getByRole('button', { name: 'Promote…' }).click()
+  const dlg = page.getByRole('dialog', { name: 'Promote this idea' })
+  await dlg.getByLabel('Principle').selectOption({ label: 'GP-01 Reliability by Design' })
+  await dlg.getByRole('button', { name: 'Create draft' }).click()
+  await expect(panel.getByRole('tab', { name: /Incorporated \(1\)/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Let staff see the state of critical systems' })).toBeVisible()
+})
+
+test('Develop: with nothing to say, the Thinking Partner says so', async ({ page }) => {
+  const panel = await open(page, 'interpret/vision')
+  await panel.getByRole('tab', { name: 'Challenge' }).click()
+  await panel.getByRole('button', { name: 'Analyze' }).click()
+  await expect(panel.getByRole('status')).toContainText('No significant observations identified from the available evidence.')
+})

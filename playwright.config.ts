@@ -24,7 +24,7 @@ export default defineConfig({
     {
       name: 'ipad-portrait',
       use: { browserName: 'chromium', viewport: { width: 1024, height: 1366 }, hasTouch: true, deviceScaleFactor: 2 },
-      testMatch: /(compass2|align)\.spec/,
+      testMatch: /(compass2|align|thinking)\.spec/,
     },
   ],
   webServer: {

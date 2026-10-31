@@ -40,17 +40,6 @@ test('Understand: compose What We Heard with evidence and preview it for the Own
   await expect(page.getByText('Patient and community voices are largely absent')).toHaveCount(0)
 })
 
-test('Understand: the Thinking Partner raises questions that become open questions only when accepted', async ({ page }) => {
-  await page.goto(`${P}/understand/questions`)
-  const panel = page.locator('section').filter({ hasText: 'Suggestions for review' }).first()
-  await panel.getByRole('combobox', { name: 'Assistant task' }).selectOption({ label: 'Raise critical questions (tensions, missing voices, solutions vs needs)' })
-  await panel.getByRole('button', { name: 'Analyze' }).click()
-  const suggestion = panel.getByRole('listitem').filter({ hasText: 'No statements attributed to: Patients' })
-  await expect(suggestion).toBeVisible()
-  await suggestion.getByRole('button', { name: 'Accept' }).click()
-  await expect(page.getByText(/Should we seek input from patients, families or caregivers/)).toBeVisible()
-})
-
 test('Interpret: point of view keeps one recommended direction and versions edits', async ({ page }) => {
   await page.goto(`${P}/interpret/point-of-view`)
   await page.getByRole('button', { name: 'Edit Central ambition' }).click()
@@ -92,7 +81,8 @@ test('Interpret to design: add an opportunity and outcome, then record evidence 
 test('Model-only features are labelled and disabled', async ({ page }) => {
   await page.goto(`${P}/interpret/principles`)
   await page.getByRole('button', { name: 'Thinking Partner' }).click()
-  const drawer = page.getByRole('dialog', { name: 'Thinking Partner' })
-  await expect(drawer.getByText('Requires an approved AI provider')).toBeVisible()
-  await expect(drawer.getByRole('button', { name: /Draft “why it matters”/ })).toBeDisabled()
+  const panel = page.getByRole('complementary', { name: 'Thinking Partner' })
+  await panel.getByText('Requires an approved AI provider', { exact: true }).click()
+  await expect(panel.getByText('This demonstration has no AI connection.')).toBeVisible()
+  await expect(panel.getByRole('button', { name: /Find semantic connections/ })).toBeDisabled()
 })

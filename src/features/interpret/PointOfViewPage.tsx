@@ -59,7 +59,7 @@ export default function PointOfViewPage() {
           </span>
         }
       />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid gap-6 @5xl:grid-cols-[minmax(0,1fr)_400px]">
         <Card className="divide-y divide-line">
           {FIELDS.map((f, i) => (
             <div key={f.key} className={cx('px-6 py-5', i === 0 && 'bg-sunken/50')}>

@@ -34,7 +34,7 @@ export function ThemesWorkspace() {
   return (
     <div className="space-y-6">
       <Insights gaps={gaps} />
-      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+      <div className="grid gap-6 @5xl:grid-cols-[380px_minmax(0,1fr)]">
         <div className="space-y-6">
           <Card>
             <CardHeader eyebrow="Ungrouped evidence" title="Statements not in a theme" description="Select statements to group them." />
@@ -99,7 +99,7 @@ export function ThemesWorkspace() {
               Group related statements to identify converging aspirations.
             </EmptyState>
           ) : (
-            <div className="grid gap-4 2xl:grid-cols-2">
+            <div className="grid gap-4 @7xl:grid-cols-2">
               {themes.map((t) => (
                 <ThemeCard key={t.id} theme={t} focused={focusTheme === t.id} unsupported={gaps.themesWithoutOwnerSupport.includes(t.id)} />
               ))}
@@ -123,7 +123,7 @@ function Insights({ gaps }: { gaps: ReturnType<typeof gapReport> }) {
   ]
   const toneCls = { risk: 'text-risk', danger: 'text-danger', warn: 'text-warn', info: 'text-info' }
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 @5xl:grid-cols-4">
       {items.map((i) => (
         <div key={i.label} className="rounded-lg border border-line bg-surface px-4 py-3 shadow-card">
           <div className={cx('flex items-center gap-2', toneCls[i.tone])}>
@@ -135,7 +135,7 @@ function Insights({ gaps }: { gaps: ReturnType<typeof gapReport> }) {
         </div>
       ))}
       {gaps.orphanStatements.length > 0 && (
-        <p className="text-[12px] text-muted sm:col-span-2 xl:col-span-4">
+        <p className="text-[12px] text-muted col-span-full">
           {gaps.orphanStatements.length} statement(s) are not linked to anything —{' '}
           <Link className="underline" to={`${base}/understand/evidence?filter=orphan`}>
             review orphaned statements

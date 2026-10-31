@@ -178,7 +178,7 @@ function StatementsList({ initialFilter }: { initialFilter: string | null }) {
         <Card as="div">
           <ul className="divide-y divide-line">
             {rows.map((s) => (
-              <li key={s.id} className="grid gap-3 px-5 py-4 lg:grid-cols-[1fr_340px]">
+              <li key={s.id} className="grid gap-3 px-5 py-4 @4xl:grid-cols-[1fr_340px]">
                 <StatementQuote statement={s} />
                 <div className="space-y-1.5 lg:border-l lg:border-line lg:pl-4">
                   <div className="eyebrow">Linked to</div>

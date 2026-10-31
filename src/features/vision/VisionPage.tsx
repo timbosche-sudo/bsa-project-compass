@@ -82,7 +82,7 @@ export function WinThemes({ headless }: { headless?: boolean } = {}) {
       {items.length === 0 ? (
         <EmptyState title={`No ${t.winTheme} yet`}>Draft one or more alternatives grounded in stakeholder and Owner evidence.</EmptyState>
       ) : (
-        <div className={cx('grid gap-4', items.length > 1 && 'lg:grid-cols-2', items.length > 2 && '2xl:grid-cols-3')}>
+        <div className={cx('grid gap-4', items.length > 1 && '@4xl:grid-cols-2', items.length > 2 && '@7xl:grid-cols-3')}>
           {items.map((w) => (
             <WinThemeCard key={w.id} w={w} onEdit={() => setEditing(w)} />
           ))}
@@ -288,7 +288,7 @@ export function Principles({ headless }: { headless?: boolean } = {}) {
           </Button>
         )}
       </div>
-      <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="grid gap-6 @5xl:grid-cols-[360px_minmax(0,1fr)]">
         <div className="space-y-4">
           <Card as="div">
             <ul className="divide-y divide-line" aria-label={`${t.guidingPrinciple}s`}>
@@ -405,7 +405,7 @@ function PrincipleDetail({ p }: { p: GuidingPrinciple }) {
         <p className="mt-2 text-[16px] leading-relaxed text-ink">{p.statement}</p>
         {p.intent && <p className="mt-3 text-[13.5px] leading-relaxed text-ink-2">{p.intent}</p>}
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="mt-5 grid gap-4 @2xl:grid-cols-2">
           <div className="rounded-md border border-line p-3.5">
             <div className="eyebrow mb-1.5">Why it matters</div>
             <EditableText label="Why it matters" value={p.whyItMatters ?? ''} canEdit={can('framework.edit')} placeholder="What we heard that makes this principle important." onSave={(v) => run({ type: 'principle.updateSupport', id: p.id, whyItMatters: v }, 'Saved')} />
@@ -417,7 +417,7 @@ function PrincipleDetail({ p }: { p: GuidingPrinciple }) {
         </div>
         <p className="mt-2 text-[11.5px] text-muted">Supporting rationale is not part of the {locked ? 'locked ' : ''}principle wording and can be refined at any time.</p>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="mt-5 grid gap-4 @2xl:grid-cols-2">
           <KeyValue
             items={[
               [

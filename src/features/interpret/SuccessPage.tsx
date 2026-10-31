@@ -68,7 +68,7 @@ export default function SuccessPage() {
               {items.length === 0 ? (
                 <p className="text-[13px] text-muted">No potential outcomes yet.</p>
               ) : (
-                <ul className="grid gap-3 lg:grid-cols-2">
+                <ul className="grid gap-3 @4xl:grid-cols-2">
                   {items.map((o) => (
                     <OutcomeCard key={o.id} o={o} focused={focus === o.id} />
                   ))}

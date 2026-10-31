@@ -14,8 +14,7 @@ export function UnderstandStage() {
           { to: 'understand/questions', label: 'Critical Questions' },
           { to: 'understand/heard', label: 'What We Heard' },
         ],
-        tasks: ['critical_questions', 'suggest_themes', 'suggest_relationships', 'find_missing_requirements'],
-        modelOnly: ['Draft a What We Heard narrative from selected evidence', 'Summarize a long transcript into candidate statements', 'Detect sentiment and emphasis across interviews'],
+        thinking: true,
       }}
     />
   )
@@ -37,8 +36,7 @@ export function InterpretStage() {
           { to: 'interpret/opportunities', label: 'Design Opportunities' },
           { to: 'interpret/success', label: 'What Success Could Look Like' },
         ],
-        tasks: ['principle_quality', 'critical_questions', 'validation_questions'],
-        modelOnly: ['Propose alternative point-of-view directions', `Suggest ${t.winTheme.toLowerCase()} wording from the evidence`, 'Draft “why it matters” from linked statements'],
+        thinking: true,
       }}
     />
   )

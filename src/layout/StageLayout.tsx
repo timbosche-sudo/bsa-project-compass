@@ -1,11 +1,9 @@
-import * as RD from '@radix-ui/react-dialog'
-import { Lightbulb, Lock, X } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { Lightbulb } from 'lucide-react'
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { useProject } from '@/app/project'
-import { SuggestionsPanel } from '@/components/SuggestionsPanel'
 import { Button, cx, InStageContext } from '@/components/ui'
-import type { AssistTask } from '@/services/ai'
+import { ThinkingPartnerPanel } from '@/features/thinking/ThinkingPartnerPanel'
 
 export interface StageStep {
   to: string
@@ -19,10 +17,17 @@ export interface StageDef {
   name: string
   purpose: string
   steps: StageStep[]
-  /** Rules-based tasks available in this stage's Thinking Partner. */
-  tasks?: AssistTask[]
-  /** Model-only capabilities, shown disabled so the team knows what an approved provider would add. */
-  modelOnly?: string[]
+  /** Offer the Thinking Partner panel in this stage. */
+  thinking?: boolean
+}
+
+const OPEN_KEY = 'compass.tp.open'
+const loadOpen = () => {
+  try {
+    return localStorage.getItem(OPEN_KEY) === '1'
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -32,10 +37,21 @@ export interface StageDef {
  */
 export function StageLayout({ stage }: { stage: StageDef }) {
   const { data } = useProject()
-  const [partner, setPartner] = useState(false)
+  const [partner, setPartnerState] = useState(loadOpen)
+  const setPartner = (o: boolean) => {
+    setPartnerState(o)
+    try {
+      localStorage.setItem(OPEN_KEY, o ? '1' : '0')
+    } catch {
+      /* optional */
+    }
+  }
   const base = `/projects/${data.project.id}`
+  const open = !!stage.thinking && partner
   return (
-    <div>
+    <div className={cx(open && 'xl:grid xl:grid-cols-[minmax(0,1fr)_440px] xl:items-start xl:gap-6')}>
+      {/* Pages lay out against this container, so they adapt when the Thinking Partner is open. */}
+      <div className="@container min-w-0">
       <div className="mb-6 border-b border-line">
         <div className="flex flex-wrap items-start justify-between gap-3 pb-3">
           <div className="min-w-0">
@@ -45,8 +61,8 @@ export function StageLayout({ stage }: { stage: StageDef }) {
             </div>
             <p className="mt-1 max-w-3xl text-[13px] text-muted">{stage.purpose}</p>
           </div>
-          {stage.tasks && (
-            <Button size="sm" icon={<Lightbulb className="size-4" />} onClick={() => setPartner(true)} aria-haspopup="dialog">
+          {stage.thinking && (
+            <Button size="sm" variant={open ? 'primary' : 'secondary'} icon={<Lightbulb className="size-4" />} onClick={() => setPartner(!partner)} aria-expanded={open}>
               Thinking Partner
             </Button>
           )}
@@ -74,51 +90,13 @@ export function StageLayout({ stage }: { stage: StageDef }) {
       <InStageContext.Provider value>
         <Outlet />
       </InStageContext.Provider>
-      {stage.tasks && <ThinkingPartner open={partner} onOpenChange={setPartner} tasks={stage.tasks} modelOnly={stage.modelOnly ?? []} />}
+      </div>
+      {open && (
+        // Beside the work on desktop and iPad landscape; over it on narrower screens.
+        <div className="fixed inset-y-0 right-0 z-40 w-[min(440px,100vw)] shadow-pop xl:sticky xl:top-[4.5rem] xl:z-auto xl:h-[calc(100dvh-6rem)] xl:w-auto xl:overflow-hidden xl:rounded-lg xl:border xl:border-line xl:shadow-card">
+          <ThinkingPartnerPanel onClose={() => setPartner(false)} />
+        </div>
+      )}
     </div>
-  )
-}
-
-function ThinkingPartner({ open, onOpenChange, tasks, modelOnly }: { open: boolean; onOpenChange: (o: boolean) => void; tasks: AssistTask[]; modelOnly: string[] }) {
-  return (
-    <RD.Root open={open} onOpenChange={onOpenChange}>
-      <RD.Portal>
-        <RD.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <RD.Content className="fixed inset-y-0 right-0 z-50 flex w-[min(460px,100vw)] flex-col border-l border-line bg-canvas shadow-pop">
-          <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
-            <div>
-              <RD.Title className="text-[16px] font-semibold text-ink">Thinking Partner</RD.Title>
-              <RD.Description className="mt-1 text-[12.5px] text-muted">Questions and observations to sharpen the team’s thinking. It proposes; people decide.</RD.Description>
-            </div>
-            <RD.Close className="rounded-md p-1 text-muted hover:bg-sunken hover:text-ink" aria-label="Close Thinking Partner">
-              <X className="size-4" />
-            </RD.Close>
-          </div>
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 scroll-thin">
-            <SuggestionsPanel tasks={tasks} />
-            {modelOnly.length > 0 && <ModelOnly items={modelOnly} />}
-          </div>
-        </RD.Content>
-      </RD.Portal>
-    </RD.Root>
-  )
-}
-
-export function ModelOnly({ items, children }: { items: string[]; children?: ReactNode }) {
-  return (
-    <section aria-label="Capabilities that require an approved AI provider" className="rounded-lg border border-dashed border-line-strong p-4">
-      <div className="eyebrow mb-2">Requires an approved AI provider</div>
-      {children ?? <p className="mb-3 text-[12.5px] text-muted">No AI model is connected. These capabilities stay off until BSA approves a provider for this project’s data classification.</p>}
-      <ul className="space-y-1.5">
-        {items.map((i) => (
-          <li key={i}>
-            <button type="button" disabled className="flex w-full cursor-not-allowed items-center gap-2 rounded-md border border-line px-3 py-2 text-left text-[13px] text-muted opacity-70" aria-disabled>
-              <Lock className="size-3.5 shrink-0" />
-              <span className="flex-1">{i}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
   )
 }

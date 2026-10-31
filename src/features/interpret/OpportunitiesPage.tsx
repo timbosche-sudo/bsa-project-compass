@@ -48,7 +48,7 @@ export default function OpportunitiesPage() {
         {unlinked.length > 0 && (
           <section aria-label="Not linked to a principle">
             <h2 className="mb-2 text-[16px] font-bold">Not yet linked to a principle</h2>
-            <ul className="grid gap-3 lg:grid-cols-2">
+            <ul className="grid gap-3 @4xl:grid-cols-2">
               {unlinked.map((o) => (
                 <OpportunityCard key={o.id} o={o} focused={focus === o.id} />
               ))}
@@ -83,7 +83,7 @@ function PrincipleGroup({ p, items, focus, onAdd }: { p: GuidingPrinciple; items
       {items.length === 0 ? (
         <p className="text-[13px] text-muted">No opportunities captured for this principle yet.</p>
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+        <ul className="grid gap-3 @4xl:grid-cols-2 @7xl:grid-cols-3">
           {items.map((o) => (
             <OpportunityCard key={o.id} o={o} focused={focus === o.id} />
           ))}

@@ -219,7 +219,13 @@ export function NodePicker({
               ? data.themes.filter((t) => t.status !== 'archived').map((t) => ({ id: t.id, code: t.code, title: t.title, sub: t.summary }))
               : type === 'decision'
                 ? data.decisions.map((d) => ({ id: d.id, code: d.code, title: d.question, sub: '' }))
-                : []
+                : type === 'winTheme'
+                  ? data.winThemes.filter((w) => isActiveFramework(w.status)).map((w) => ({ id: w.id, code: w.code, title: w.statement, sub: w.narrative }))
+                  : type === 'opportunity'
+                    ? data.opportunities.map((o) => ({ id: o.id, code: o.code, title: o.title, sub: o.description }))
+                    : type === 'outcome'
+                      ? data.outcomes.map((o) => ({ id: o.id, code: o.code, title: o.statement, sub: '' }))
+                      : []
     const ql = q.toLowerCase()
     return pool.filter((x) => !exclude.includes(x.id) && (!ql || `${x.code} ${x.title} ${x.sub}`.toLowerCase().includes(ql)))
   }, [data, type, q, exclude])
