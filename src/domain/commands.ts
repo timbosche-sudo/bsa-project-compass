@@ -151,6 +151,13 @@ const REQUIRED: Record<CommandType, Capability> = {
   'suggestion.add': 'suggestion.request',
   'suggestion.accept': 'suggestion.review',
   'suggestion.dismiss': 'suggestion.review',
+  'suggestion.markNotRelevant': 'suggestion.review',
+  'suggestion.saveQuestion': 'comment.create',
+  'suggestion.toCanvas': 'suggestion.request',
+  'canvas.create': 'suggestion.request',
+  'canvas.update': 'suggestion.request',
+  'canvas.delete': 'suggestion.request',
+  'canvas.promote': 'suggestion.request',
   'milestone.upsert': 'driver.edit',
   'milestone.delete': 'driver.edit',
 }
@@ -1085,6 +1092,139 @@ const handlers: Handlers = {
     s.status = 'dismissed'
     s.reviewedBy = x.actorId
     return { summary: `Dismissed suggestion: ${s.title}`, target: s.target }
+  },
+  'suggestion.markNotRelevant': (d, c, x) => {
+    const s = find(d.suggestions, c.id, 'Suggestion')
+    s.status = 'not_relevant'
+    s.reviewedBy = x.actorId
+    return { summary: `Marked not relevant: ${s.title}`, target: s.target }
+  },
+  'suggestion.saveQuestion': (d, c, x) => {
+    const s = find(d.suggestions, c.id, 'Suggestion')
+    if (s.status !== 'pending') throw new DomainError('This suggestion has already been reviewed.')
+    const text = (s.card?.question || String((s.payload as Record<string, unknown>).question ?? '') || s.title).slice(0, 1000)
+    const created = handlers['question.create'](d, { type: 'question.create', question: text, context: s.evidence.slice(0, 20) }, x)
+    s.status = 'accepted'
+    s.reviewedBy = x.actorId
+    return { summary: `Saved as a question: ${text.slice(0, 120)}`, createdId: created.createdId }
+  },
+  'suggestion.toCanvas': (d, c, x) => {
+    const s = find(d.suggestions, c.id, 'Suggestion')
+    if (s.status !== 'pending') throw new DomainError('This suggestion has already been reviewed.')
+    const card = s.card
+    const body = card ? [card.whyItMatters, card.question && `Question: ${card.question}`].filter(Boolean).join('\n\n') : s.body
+    const id = newId()
+    d.canvas.push({
+      id,
+      kind: c.kind ?? (card?.mode === 'challenge' ? 'question' : card?.mode === 'develop' ? 'interpretation' : 'connection'),
+      title: (card?.observation ?? s.title).slice(0, 300),
+      body,
+      state: 'exploring',
+      origin: s.origin,
+      sourceSuggestionId: s.id,
+      evidence: s.evidence.slice(0, 40),
+      context: card?.scope ?? { workspace: 'project', focus: s.target },
+      promotedTo: null,
+      createdBy: x.actorId,
+      createdAt: x.now,
+      updatedBy: x.actorId,
+      updatedAt: x.now,
+    })
+    s.status = 'saved'
+    s.reviewedBy = x.actorId
+    return { summary: `Saved to the Working Canvas: ${s.title}`, createdId: id }
+  },
+
+  // ---------------- Thinking Partner: Working Canvas ----------------
+  'canvas.create': (d, c, x) => {
+    c.item.evidence.forEach((r) => {
+      if (!nodeExists(d, r)) throw new DomainError('Evidence reference not found in this project.')
+    })
+    if (c.sourceSuggestionId) find(d.suggestions, c.sourceSuggestionId, 'Suggestion')
+    const id = newId()
+    d.canvas.push({ id, ...c.item, state: 'exploring', origin: c.origin, sourceSuggestionId: c.sourceSuggestionId, promotedTo: null, createdBy: x.actorId, createdAt: x.now, updatedBy: x.actorId, updatedAt: x.now })
+    return { summary: `Added to the Working Canvas: ${c.item.title}`, createdId: id }
+  },
+  'canvas.update': (d, c, x) => {
+    const i = find(d.canvas, c.id, 'Canvas item')
+    c.patch.evidence?.forEach((r) => {
+      if (!nodeExists(d, r)) throw new DomainError('Evidence reference not found in this project.')
+    })
+    Object.assign(i, c.patch, { updatedBy: x.actorId, updatedAt: x.now })
+    return { summary: `Updated canvas item: ${i.title}` }
+  },
+  'canvas.delete': (d, c) => {
+    const i = find(d.canvas, c.id, 'Canvas item')
+    d.canvas = d.canvas.filter((y) => y.id !== i.id)
+    return { summary: `Removed canvas item: ${i.title}` }
+  },
+  /**
+   * Promote an idea into a project area — always as a new draft for review.
+   * Never edits existing (let alone approved) content.
+   */
+  'canvas.promote': (d, c, x) => {
+    const i = find(d.canvas, c.id, 'Canvas item')
+    if (i.state === 'incorporated') throw new DomainError('This idea has already been incorporated.')
+    const statements = i.evidence.filter((e) => e.type === 'statement' || e.type === 'theme')
+    let ref: NodeRef | null = null
+    let label = ''
+    switch (c.target) {
+      case 'question': {
+        x.require('comment.create')
+        const id = handlers['question.create'](d, { type: 'question.create', question: [i.title, i.body].filter(Boolean).join(' — ').slice(0, 1000), context: i.evidence.slice(0, 20) }, x).createdId!
+        label = `Critical Question ${d.questions.find((q) => q.id === id)?.code ?? ''}`.trim()
+        break
+      }
+      case 'heard': {
+        x.require('theme.edit')
+        const id = handlers['heard.create'](d, { type: 'heard.create', item: { section: c.section ?? 'theme', title: i.title, narrative: i.body, evidence: statements.slice(0, 60), inPresentation: false } }, x).createdId!
+        const h = find(d.heard, id, 'What We Heard item')
+        h.origin = i.origin
+        h.reviewed = false
+        label = 'What We Heard (draft, needs review)'
+        break
+      }
+      case 'pov_alternative': {
+        x.require('framework.edit')
+        const base = d.pointOfView
+          ? povContent(d.pointOfView)
+          : { centralAmbition: '', opportunity: '', connectingIdea: '', tensions: '', distinctiveness: '', keepInMind: '', alternatives: [] }
+        if (base.alternatives.length >= 8) throw new DomainError('The point of view already has eight alternative directions.')
+        handlers['pov.update'](d, { type: 'pov.update', content: { ...base, alternatives: [...base.alternatives, { id: newId(), title: i.title.slice(0, 200), summary: i.body, recommended: false }] } }, x)
+        label = 'Point of View — alternative direction'
+        break
+      }
+      case 'vision_draft': {
+        x.require('framework.edit')
+        const id = handlers['winTheme.create'](d, { type: 'winTheme.create', content: { statement: i.title.slice(0, 300), narrative: i.body } }, x).createdId!
+        ref = { type: 'winTheme', id }
+        label = `${d.project.terminology.winTheme} alternative ${d.winThemes.find((w) => w.id === id)?.code ?? ''} (proposed)`
+        break
+      }
+      case 'opportunity': {
+        x.require('framework.edit')
+        if (!c.principleId) throw new DomainError('Choose the principle this opportunity serves.')
+        const id = handlers['opportunity.create'](d, { type: 'opportunity.create', content: { title: i.title.slice(0, 200), description: i.body, principleIds: [c.principleId], state: 'emerging', inPresentation: false, linkedDriverIds: [] } }, x).createdId!
+        const o = find(d.opportunities, id, 'Design opportunity')
+        o.origin = i.origin
+        ref = { type: 'opportunity', id }
+        label = `Design Opportunity ${o.code} (emerging)`
+        break
+      }
+      case 'outcome': {
+        x.require('framework.edit')
+        if (!c.principleId) throw new DomainError('Choose the principle this outcome relates to.')
+        const id = handlers['outcome.create'](d, { type: 'outcome.create', content: { statement: i.title.slice(0, 600), principleId: c.principleId, opportunityId: null, category: 'qualitative', state: 'emerging', aspiration: false, possibleMeasures: '', inPresentation: false } }, x).createdId!
+        ref = { type: 'outcome', id }
+        label = `Potential Outcome ${d.outcomes.find((o) => o.id === id)?.code ?? ''} (emerging)`
+        break
+      }
+    }
+    i.state = 'incorporated'
+    i.promotedTo = { target: c.target, ref, label, at: x.now }
+    i.updatedBy = x.actorId
+    i.updatedAt = x.now
+    return { summary: `Promoted canvas idea "${i.title}" to ${label}`, target: ref, createdId: ref?.id }
   },
   // ---------------- Understand: What We Heard ----------------
   'heard.create': (d, c, x) => {

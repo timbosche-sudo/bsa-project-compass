@@ -16,5 +16,6 @@ export function normalizeProjectData(d: ProjectData): ProjectData {
   x.outcomes ??= []
   x.alignment ??= []
   x.directions ??= []
+  x.canvas ??= []
   return x
 }

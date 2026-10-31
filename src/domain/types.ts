@@ -531,8 +531,46 @@ export const SUGGESTION_KINDS = [
   'missing_perspective',
   'solution_vs_need',
   'principle_quality',
+  // Thinking Partner 2.0: a structured observation card, optionally with a guided exploration.
+  'observation',
 ] as const
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number]
+
+/** The four ways the Thinking Partner helps a team think. */
+export const THINKING_MODES = ['explore', 'challenge', 'develop', 'refine'] as const
+export type ThinkingMode = (typeof THINKING_MODES)[number]
+
+/** Whether a suggestion rests on source statements, on other project content, or on neither. */
+export const EVIDENCE_STATUSES = ['direct', 'indirect', 'inference'] as const
+export type EvidenceStatus = (typeof EVIDENCE_STATUSES)[number]
+
+/** A curated direction offered in a guided exploration. Illustrative, never a conclusion. */
+export interface ExplorationDirection {
+  id: string
+  title: string
+  summary: string
+}
+
+export interface SuggestionCard {
+  mode: ThinkingMode
+  /** What was noticed. */
+  observation: string
+  whyItMatters: string
+  /** Relevant project information, in words. */
+  supportingContext: string
+  question: string
+  nextAction: string
+  evidenceStatus: EvidenceStatus
+  /** Which rule or method produced it, in plain language. */
+  method: string
+  /** Identifies the observation; with evidenceKey, prevents dismissed items from reappearing unchanged. */
+  fingerprint: string
+  evidenceKey: string
+  /** The workspace and item that were analyzed. */
+  scope: { workspace: string; focus: NodeRef | null }
+  /** Optional guided exploration: a question with curated directions to compare. */
+  exploration?: { question: string; directions: ExplorationDirection[]; basis: string }
+}
 
 export interface Suggestion {
   id: ID
@@ -546,9 +584,45 @@ export interface Suggestion {
   payload: Record<string, unknown>
   origin: Exclude<Origin, 'human'>
   provider: string
-  status: 'pending' | 'accepted' | 'dismissed'
+  /**
+   * pending → awaiting review; accepted → applied or saved as a question;
+   * saved → kept as a working consideration on the canvas; dismissed / not_relevant → set aside.
+   */
+  status: 'pending' | 'accepted' | 'saved' | 'dismissed' | 'not_relevant'
   createdAt: ISODate
   reviewedBy: ID | null
+  /** Thinking Partner 2.0 card content. Absent on suggestions created before 2.0. */
+  card?: SuggestionCard
+}
+
+// ---------------------------------------------------------------------------
+// Working Canvas — an informal space for ideas, distinct from project content
+// ---------------------------------------------------------------------------
+
+export const CANVAS_KINDS = ['interpretation', 'question', 'connection', 'narrative', 'opportunity', 'needs_evidence'] as const
+export type CanvasKind = (typeof CANVAS_KINDS)[number]
+export const CANVAS_STATES = ['exploring', 'worth_developing', 'incorporated', 'set_aside'] as const
+export type CanvasState = (typeof CANVAS_STATES)[number]
+/** Where a canvas idea can be promoted, always as a draft for review. */
+export const PROMOTE_TARGETS = ['question', 'heard', 'pov_alternative', 'vision_draft', 'opportunity', 'outcome'] as const
+export type PromoteTarget = (typeof PROMOTE_TARGETS)[number]
+
+export interface CanvasItem {
+  id: ID
+  kind: CanvasKind
+  title: string
+  body: string
+  state: CanvasState
+  /** human = written by the team; rules = started from a rule-based observation or curated pattern; ai = future approved model. */
+  origin: Origin
+  sourceSuggestionId: ID | null
+  evidence: NodeRef[]
+  context: { workspace: string; focus: NodeRef | null }
+  promotedTo: { target: PromoteTarget; ref: NodeRef | null; label: string; at: ISODate } | null
+  createdBy: ID
+  createdAt: ISODate
+  updatedBy: ID
+  updatedAt: ISODate
 }
 
 export interface AuditEvent {
@@ -801,6 +875,8 @@ export interface ProjectData {
   opportunities: DesignOpportunity[]
   /** Interpret: what success could look like (no targets required). */
   outcomes: PotentialOutcome[]
+  /** Thinking Partner: the team's Working Canvas of ideas (not project content). */
+  canvas: CanvasItem[]
   /** Align: Owner responses to the vision and principles, captured per session. */
   alignment: AlignmentResponse[]
   /** Align: immutable snapshots of the direction (proposed, Owner-reviewed, aligned, revisions). */

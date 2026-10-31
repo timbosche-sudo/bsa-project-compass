@@ -570,6 +570,7 @@ export function createDemoProject(): ProjectData {
     ],
     alignment: demoAlignment(P.avery.id),
     directions: [],
+    canvas: [],
     revision: 1,
   }
   // The team saved the direction it intends to present at WS-02.
@@ -665,6 +666,7 @@ export function createEmptyProject(o: {
     outcomes: [],
     alignment: [],
     directions: [],
+    canvas: [],
     audit: [],
     workshops: [],
     trash: [],

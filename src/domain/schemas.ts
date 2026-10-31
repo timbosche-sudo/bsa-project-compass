@@ -1,5 +1,10 @@
 import { z } from 'zod'
 import {
+  CANVAS_KINDS,
+  CANVAS_STATES,
+  EVIDENCE_STATUSES,
+  PROMOTE_TARGETS,
+  THINKING_MODES,
   ALIGNMENT_STATUSES,
   ALIGNMENT_TARGET_TYPES,
   DIRECTION_STATES,
@@ -235,6 +240,36 @@ export const outcomeInputSchema = z.object({
 
 const attendeeSchema = z.object({ name: requiredShort, organization: shortText, role: shortText })
 
+const cardText = z.string().max(2000)
+export const suggestionCardSchema = z.object({
+  mode: z.enum(THINKING_MODES),
+  observation: z.string().min(1).max(600),
+  whyItMatters: cardText,
+  supportingContext: cardText,
+  question: z.string().max(600),
+  nextAction: z.string().max(600),
+  evidenceStatus: z.enum(EVIDENCE_STATUSES),
+  method: z.string().max(200),
+  fingerprint: z.string().max(300),
+  evidenceKey: z.string().max(64),
+  scope: z.object({ workspace: z.string().max(60), focus: nodeRefSchema.nullable() }),
+  exploration: z
+    .object({
+      question: z.string().max(600),
+      basis: z.string().max(200),
+      directions: z.array(z.object({ id: z.string().max(64), title: z.string().max(200), summary: z.string().max(1200) })).max(6),
+    })
+    .optional(),
+})
+
+const canvasInputSchema = z.object({
+  kind: z.enum(CANVAS_KINDS),
+  title: z.string().trim().min(1, 'Required').max(300),
+  body: longText,
+  evidence: z.array(nodeRefSchema).max(40),
+  context: z.object({ workspace: z.string().max(60), focus: nodeRefSchema.nullable() }),
+})
+
 const suggestionInputSchema = z.object({
   kind: z.enum(SUGGESTION_KINDS),
   title: z.string().max(300),
@@ -244,6 +279,7 @@ const suggestionInputSchema = z.object({
   payload: z.record(z.string(), z.unknown()),
   origin: z.enum(['ai', 'rules']),
   provider: z.string().max(100),
+  card: suggestionCardSchema.optional(),
 })
 
 const cmd = <T extends string, S extends z.ZodRawShape>(type: T, shape: S) =>
@@ -378,6 +414,14 @@ export const commandSchema = z.discriminatedUnion('type', [
   cmd('suggestion.add', { suggestions: z.array(suggestionInputSchema).max(50) }),
   cmd('suggestion.accept', { id }),
   cmd('suggestion.dismiss', { id }),
+  cmd('suggestion.markNotRelevant', { id }),
+  cmd('suggestion.saveQuestion', { id }),
+  cmd('suggestion.toCanvas', { id, kind: z.enum(CANVAS_KINDS).optional() }),
+  // Thinking Partner: Working Canvas
+  cmd('canvas.create', { item: canvasInputSchema, origin: z.enum(['human', 'rules']), sourceSuggestionId: id.nullable() }),
+  cmd('canvas.update', { id, patch: canvasInputSchema.omit({ context: true }).partial().extend({ state: z.enum(CANVAS_STATES).optional() }) }),
+  cmd('canvas.delete', { id }),
+  cmd('canvas.promote', { id, target: z.enum(PROMOTE_TARGETS), principleId: id.optional(), section: z.enum(HEARD_SECTIONS).optional() }),
   cmd('milestone.upsert', {
     milestone: z.object({ id: id.optional(), name: requiredShort, date: isoDate, phase: z.enum(PHASES), driverIds: z.array(id), complete: z.boolean() }),
   }),

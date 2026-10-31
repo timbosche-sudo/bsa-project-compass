@@ -152,7 +152,7 @@ async function createProject(body: unknown, me: Person & { isSystemAdmin: boolea
       aiPolicy: { enabled: false, allowedClassifications: ['public'] },
     },
     people: [{ id: me.id, name: me.name, title: me.title, organization: me.organization, email: me.email }],
-    sources: [], statements: [], relationships: [], themes: [], questions: [], winThemes: [], principles: [], drivers: [], decisions: [], milestones: [], comments: [], suggestions: [], heard: [], pointOfView: null, opportunities: [], outcomes: [], alignment: [], directions: [], audit: [], workshops: [], trash: [],
+    sources: [], statements: [], relationships: [], themes: [], questions: [], winThemes: [], principles: [], drivers: [], decisions: [], milestones: [], comments: [], suggestions: [], heard: [], pointOfView: null, opportunities: [], outcomes: [], alignment: [], directions: [], canvas: [], audit: [], workshops: [], trash: [],
     revision: 1,
   }
   await store.createProject(data, me.organization)

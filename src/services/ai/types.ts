@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { nodeRefSchema } from '@/domain/schemas'
+import { nodeRefSchema, suggestionCardSchema } from '@/domain/schemas'
 import { SUGGESTION_KINDS, type ProjectData } from '@/domain/types'
 
 export const ASSIST_TASKS = ['suggest_relationships', 'suggest_themes', 'find_missing_requirements', 'validation_questions', 'critical_questions', 'principle_quality'] as const
@@ -22,6 +22,7 @@ export const suggestionOutputSchema = z.object({
   evidence: z.array(nodeRefSchema).max(40),
   target: nodeRefSchema.nullable(),
   payload: z.record(z.string(), z.unknown()),
+  card: suggestionCardSchema.optional(),
 })
 export const assistOutputSchema = z.object({ suggestions: z.array(suggestionOutputSchema).max(50) })
 export type SuggestionOutput = z.infer<typeof suggestionOutputSchema>
