@@ -13,7 +13,9 @@ import {
   GripVertical,
   Loader2,
   Maximize,
+  MessageSquareText,
   MonitorPlay,
+  SlidersHorizontal,
   PanelRightClose,
   PanelRightOpen,
   Pencil,
@@ -24,19 +26,22 @@ import {
   Undo2,
   X,
 } from 'lucide-react'
+import * as DM from '@radix-ui/react-dropdown-menu'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { useProject } from '@/app/project'
 import { useConfirm } from '@/components/Dialog'
 import { ApprovalBadge } from '@/components/StatusBadge'
 import { Badge, Button, cx, IconButton } from '@/components/ui'
-import { APPROVAL_LABELS } from '@/domain/labels'
+import { alignmentStatusOf } from '@/domain/alignment'
+import { ALIGNMENT_STATUS_LABELS, APPROVAL_LABELS } from '@/domain/labels'
 import type { ApprovalStatus, GuidingPrinciple, WinTheme } from '@/domain/types'
 import { liveSession, type FrameworkKind } from '@/domain/workshop'
 import { BsaLogo } from '@/brand/BsaLogo'
 import { ApproveDialog, MergeDialog } from './dialogs'
+import { AlignmentCapture, ALIGNMENT_TONE } from './AlignmentCapture'
 import { FacilitatorPanel } from './FacilitatorPanel'
-import { buildSlides, Slide, SlideStage, type DeckOptions, type SlideDef } from './Slides'
+import { buildSlides, CHAPTERS, DEFAULT_DECK, Slide, SlideStage, type Chapter, type DeckOptions, type SlideDef } from './Slides'
 import { SaveStatusProvider, UndoProvider, useSaveStatus, useUndo, useWorkshopActions } from './state'
 
 export const workshopChannel = (projectId: string) => `compass-workshop:${projectId}`
@@ -45,10 +50,23 @@ export type ChannelMessage = { type: 'slide'; key: string; opts: DeckOptions } |
 const OPTS_KEY = 'compass.workshop.opts'
 function loadOpts(): DeckOptions {
   try {
-    return { showStatus: true, hideNotAdopted: false, ...JSON.parse(localStorage.getItem(OPTS_KEY) ?? '{}') }
+    return { ...DEFAULT_DECK, ...JSON.parse(localStorage.getItem(OPTS_KEY) ?? '{}') }
   } catch {
-    return { showStatus: true, hideNotAdopted: false }
+    return DEFAULT_DECK
   }
+}
+
+const SLIDE_HINTS: Record<SlideDef['kind'], string> = {
+  title: 'Title slide — shows the project, Owner and session.',
+  chapter: 'Chapter divider. Press 1–4 to jump between chapters while presenting.',
+  heard: 'Shows reviewed What We Heard items marked for the presentation. Edit them in Understand → What We Heard.',
+  pov: 'BSA’s point of view. Edit it in Interpret → Point of View.',
+  winTheme: '',
+  overview: 'Overview of all guiding principles. Select a principle to wordsmith it.',
+  principle: '',
+  outcomes: 'Potential outcomes marked for the presentation. Edit them in Interpret → What Success Could Look Like.',
+  discussion: 'Prompts for the conversation, with the tensions from the point of view.',
+  summary: 'Updates live as you record Owner responses. Nothing counts as aligned until it is recorded.',
 }
 
 const REVIEW_STATUSES: { value: Exclude<ApprovalStatus, 'approved' | 'superseded'>; label: string }[] = [
@@ -95,6 +113,11 @@ function Workshop() {
   const slide = slides[index] ?? slides[0]
   const go = useCallback((key: string) => setParams((p) => { const n = new URLSearchParams(p); n.set('slide', key); return n }, { replace: true }), [setParams])
   const step = useCallback((d: number) => go(slides[Math.min(slides.length - 1, Math.max(0, index + d))].key), [go, slides, index])
+  const jumpChapter = useCallback((n: Chapter) => {
+    const target = slides.find((s) => s.key === `chapter:${n}`) ?? slides.find((s) => s.chapter === n)
+    if (target) go(target.key)
+  }, [go, slides])
+  const [capture, setCapture] = useState(false)
 
   const live = liveSession(data)
   // Follow the live session; keep showing it after it ends so its summary stays at hand.
@@ -233,13 +256,24 @@ function Workshop() {
         case 'F':
           toggleFullscreen()
           break
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+          jumpChapter(Number(e.key) as Chapter)
+          break
+        case 'a':
+        case 'A':
+          if (mode === 'present' && item && can('workshop.facilitate')) setCapture((c) => !c)
+          break
         case 'n':
         case 'N':
           if (mode === 'edit') setPanel((x) => !x)
           break
         case 'Escape':
           if (mode === 'present') {
-            if (wordsmith) setWordsmith(false)
+            if (capture) setCapture(false)
+            else if (wordsmith) setWordsmith(false)
             else void exitPresent()
           }
           break
@@ -247,7 +281,7 @@ function Workshop() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [undo, step, go, slides, mode, wordsmith, present, exitPresent, toggleFullscreen, move, slide])
+  }, [capture, undo, step, go, slides, mode, wordsmith, present, exitPresent, toggleFullscreen, move, slide, jumpChapter, item, can])
 
   // Leaving browser full screen (Esc handled by the browser) returns to Edit mode.
   useEffect(() => {
@@ -284,8 +318,29 @@ function Workshop() {
         onWordsmith={() => setWordsmith((w) => !w)}
         canEdit={can('framework.edit')}
         statusControls={wordsmith && item && kind ? <ItemStatusControls item={item} kind={kind} compact onApprove={() => setDialog('approve')} /> : null}
+        chapter={slide.chapter ?? null}
+        onChapter={jumpChapter}
+        canCapture={!!item && can('workshop.facilitate')}
+        capturing={capture}
+        onCapture={() => setCapture((c) => !c)}
       >
         {stage}
+        {capture && item && kind && (
+          <div className="absolute inset-y-4 right-4 z-10 flex w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-line bg-raised text-ink shadow-pop" role="dialog" aria-label={`Owner response to ${item.code}`}>
+            <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+              <div>
+                <div className="eyebrow">Owner response · {item.code}</div>
+                <div className="text-[12px] text-muted">{session ? `${session.code} · ${session.title}` : 'No session selected'}</div>
+              </div>
+              <IconButton label="Close (A or Esc)" onClick={() => setCapture(false)}>
+                <X className="size-4" />
+              </IconButton>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 scroll-thin">
+              <AlignmentCapture type={kind} id={item.id} code={item.code} session={session} compact />
+            </div>
+          </div>
+        )}
         {dialogs}
       </PresentShell>
     )
@@ -314,12 +369,7 @@ function Workshop() {
             <Redo2 className="size-4" />
           </IconButton>
           <div className="mx-1 h-6 w-px bg-line" />
-          <label className="hidden items-center gap-1.5 text-[12.5px] text-ink-2 xl:flex">
-            <input type="checkbox" className="accent-[var(--c-accent)]" checked={opts.showStatus} onChange={(e) => setOpts({ ...opts, showStatus: e.target.checked })} /> Show statuses
-          </label>
-          <label className="hidden items-center gap-1.5 text-[12.5px] text-ink-2 xl:flex">
-            <input type="checkbox" className="accent-[var(--c-accent)]" checked={opts.hideNotAdopted} onChange={(e) => setOpts({ ...opts, hideNotAdopted: e.target.checked })} /> Hide not adopted
-          </label>
+          <DeckOptionsMenu opts={opts} onChange={setOpts} />
           <Button size="sm" variant="ghost" icon={<ExternalLink className="size-3.5" />} onClick={openAudience} title="Open a separate audience window (e.g. for a second display)">
             <span className="hidden lg:inline">Audience window</span>
             {audience && <span className="size-1.5 rounded-full bg-ok-fill" aria-label="connected" />}
@@ -368,7 +418,7 @@ function Workshop() {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2 text-[12.5px] text-muted">{slide.kind === 'title' ? 'Title slide — shows the project, Owner and session.' : slide.kind === 'overview' ? 'Overview of all guiding principles. Select a principle to wordsmith it.' : 'Outcomes update live as statuses change.'}</div>
+            <div className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2 text-[12.5px] text-muted">{SLIDE_HINTS[slide.kind]}</div>
           )}
           <div className="min-h-0 flex-1 p-4 lg:p-6">{stage}</div>
           <div className="flex items-center justify-center gap-3 border-t border-line bg-surface py-2">
@@ -386,7 +436,7 @@ function Workshop() {
         </main>
         {panel && (
           <aside className="min-h-0 border-l border-line bg-surface max-xl:fixed max-xl:top-14 max-xl:right-0 max-xl:bottom-0 max-xl:z-20 max-xl:w-[min(380px,100vw)] max-xl:shadow-pop" aria-label="Facilitator panel">
-            <FacilitatorPanel item={item} kind={kind} session={session} onSelectSession={setSessionId} />
+            <FacilitatorPanel item={item} kind={kind} session={session} onSelectSession={setSessionId} slideKey={slide.key} slideLabel={slide.label} />
           </aside>
         )}
       </div>
@@ -462,6 +512,7 @@ function SlideRail({ slides, current, onSelect, onAddPrinciple, onAddWinTheme, o
   const { data } = useProject()
   const [dragging, setDragging] = useState<string | null>(null)
   const [over, setOver] = useState<string | null>(null)
+  const alignOf = (s: SlideDef) => (s.kind === 'principle' || s.kind === 'winTheme' ? alignmentStatusOf(data, s.kind, s.id!) : null)
   const statusOf = (s: SlideDef): ApprovalStatus | null => (s.kind === 'principle' ? (data.principles.find((p) => p.id === s.id)?.status ?? null) : s.kind === 'winTheme' ? (data.winThemes.find((w) => w.id === s.id)?.status ?? null) : null)
   const drop = (targetId: string) => {
     if (!dragging || dragging === targetId) return
@@ -500,14 +551,21 @@ function SlideRail({ slides, current, onSelect, onAddPrinciple, onAddWinTheme, o
               }}
               className={cx('group rounded-md', over === s.id && dragging !== s.id && 'ring-2 ring-accent')}
             >
-              <button onClick={() => onSelect(s.key)} aria-current={s.key === current ? 'true' : undefined} className={cx('flex w-full items-start gap-2 rounded-md px-2 py-2 text-left', s.key === current ? 'bg-inverse text-on-inverse' : 'hover:bg-sunken', s.kind === 'principle' && 'pl-3')}>
+              <button onClick={() => onSelect(s.key)} aria-current={s.key === current ? 'true' : undefined} className={cx('flex w-full items-start gap-2 rounded-md px-2 py-2 text-left', s.key === current ? 'bg-inverse text-on-inverse' : 'hover:bg-sunken', s.chapter && s.kind !== 'chapter' && 'pl-3', s.kind === 'chapter' && 'mt-2')}>
                 <span className={cx('w-5 shrink-0 pt-0.5 font-mono text-[10.5px] tabular-nums', s.key === current ? 'opacity-70' : 'text-faint')}>{i + 1}</span>
                 <span className="min-w-0 flex-1">
-                  <span className={cx('line-clamp-2 text-[12.5px] leading-snug', s.kind === 'title' || s.kind === 'overview' || s.kind === 'summary' ? 'font-semibold' : '')}>{s.label}</span>
+                  <span className={cx('line-clamp-2 leading-snug', s.kind === 'chapter' ? 'text-[11px] font-black tracking-[0.08em] uppercase' : 'text-[12.5px]', s.kind === 'title' || s.kind === 'overview' || s.kind === 'summary' || s.kind === 'discussion' ? 'font-semibold' : '')}>{s.label}</span>
                   {st && (
                     <span className={cx('mt-0.5 flex items-center gap-1 text-[10.5px]', s.key === current ? 'opacity-75' : 'text-muted')}>
                       <span className={cx('size-1.5 rounded-full', { approved: 'bg-ok-fill', in_review: 'bg-info-fill', needs_refinement: 'bg-warn-fill', not_adopted: 'bg-danger-fill', proposed: 'bg-line-strong', superseded: 'bg-faint' }[st])} />
                       {APPROVAL_LABELS[st]}
+                      {alignOf(s) && alignOf(s) !== 'not_reviewed' && (
+                        <>
+                          <span aria-hidden>·</span>
+                          <span className={cx('size-1.5 rounded-full', ALIGNMENT_TONE[alignOf(s)!])} />
+                          {ALIGNMENT_STATUS_LABELS[alignOf(s)!]}
+                        </>
+                      )}
                     </span>
                   )}
                 </span>
@@ -608,7 +666,39 @@ function SessionPill() {
   )
 }
 
-function PresentShell({ children, onPrev, onNext, onExit, onFullscreen, position, wordsmith, onWordsmith, canEdit, statusControls }: { children: ReactNode; onPrev: () => void; onNext: () => void; onExit: () => void; onFullscreen: () => void; position: string; wordsmith: boolean; onWordsmith: () => void; canEdit: boolean; statusControls: ReactNode }) {
+function PresentShell({
+  children,
+  onPrev,
+  onNext,
+  onExit,
+  onFullscreen,
+  position,
+  wordsmith,
+  onWordsmith,
+  canEdit,
+  statusControls,
+  chapter,
+  onChapter,
+  canCapture,
+  capturing,
+  onCapture,
+}: {
+  children: ReactNode
+  onPrev: () => void
+  onNext: () => void
+  onExit: () => void
+  onFullscreen: () => void
+  position: string
+  wordsmith: boolean
+  onWordsmith: () => void
+  canEdit: boolean
+  statusControls: ReactNode
+  chapter: Chapter | null
+  onChapter: (n: Chapter) => void
+  canCapture: boolean
+  capturing: boolean
+  onCapture: () => void
+}) {
   const [visible, setVisible] = useState(true)
   const timer = useRef<number | null>(null)
   const poke = useCallback(() => {
@@ -620,10 +710,10 @@ function PresentShell({ children, onPrev, onNext, onExit, onFullscreen, position
     poke()
     return () => void (timer.current && window.clearTimeout(timer.current))
   }, [poke])
-  const show = visible || wordsmith
+  const show = visible || wordsmith || capturing
   return (
-    <div className={cx('fixed inset-0 z-30 flex flex-col bg-black', !show && 'cursor-none')} onMouseMove={poke} onTouchStart={poke} data-testid="present-mode">
-      <div className={cx('min-h-0 flex-1', wordsmith && 'pb-16')}>{children}</div>
+    <div className={cx('fixed inset-0 z-30 flex flex-col bg-black', !show && 'cursor-none')} onMouseMove={poke} onTouchStart={poke} onClick={poke} data-testid="present-mode">
+      <div className={cx('flex min-h-0 flex-1', wordsmith && 'pb-16', capturing && 'md:pr-[416px]')}>{children}</div>
       <div className={cx('pointer-events-none absolute inset-x-0 bottom-4 flex justify-center transition-opacity duration-300', show ? 'opacity-100' : 'opacity-0')}>
         <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/15 bg-black/80 px-2 py-1.5 text-white shadow-pop backdrop-blur" role="toolbar" aria-label="Presentation controls">
           <PresentButton label="Previous (←)" onClick={onPrev}>
@@ -633,6 +723,30 @@ function PresentShell({ children, onPrev, onNext, onExit, onFullscreen, position
           <PresentButton label="Next (→)" onClick={onNext}>
             <ChevronRight className="size-5" />
           </PresentButton>
+          <span className="mx-1 h-5 w-px bg-white/20" />
+          <span className="flex items-center gap-0.5" role="group" aria-label="Chapters">
+            {([1, 2, 3, 4] as Chapter[]).map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => onChapter(n)}
+                aria-current={chapter === n ? 'step' : undefined}
+                aria-label={`Chapter ${n}: ${CHAPTERS[n].title} (${n})`}
+                title={`${CHAPTERS[n].title} (${n})`}
+                className={cx('flex h-8 min-w-8 items-center justify-center rounded-md px-1.5 text-[12.5px] font-bold tabular-nums', chapter === n ? 'bg-white text-black' : 'text-white/70 hover:bg-white/10 hover:text-white')}
+              >
+                {n}
+              </button>
+            ))}
+          </span>
+          {canCapture && (
+            <>
+              <span className="mx-1 h-5 w-px bg-white/20" />
+              <button type="button" onClick={onCapture} aria-pressed={capturing} className={cx('flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium', capturing ? 'bg-white text-black' : 'text-white/85 hover:bg-white/10')} title="Record the Owner’s response (A)">
+                <MessageSquareText className="size-3.5" /> Owner response
+              </button>
+            </>
+          )}
           {canEdit && (
             <>
               <span className="mx-1 h-5 w-px bg-white/20" />
@@ -661,5 +775,43 @@ function PresentButton({ label, onClick, children }: { label: string; onClick: (
     <button type="button" aria-label={label} title={label} onClick={onClick} className="flex size-8 items-center justify-center rounded-md text-white/85 hover:bg-white/10 hover:text-white">
       {children}
     </button>
+  )
+}
+
+function DeckOptionsMenu({ opts, onChange }: { opts: DeckOptions; onChange: (o: DeckOptions) => void }) {
+  const items: { key: keyof DeckOptions; label: string }[] = [
+    { key: 'showStatus', label: 'Show review statuses' },
+    { key: 'hideNotAdopted', label: 'Hide items not adopted' },
+    { key: 'showOpportunities', label: 'Show design opportunities on principles' },
+    { key: 'showEvidence', label: 'Show a supporting quote on principles' },
+  ]
+  return (
+    <DM.Root>
+      <DM.Trigger asChild>
+        <Button size="sm" variant="ghost" icon={<SlidersHorizontal className="size-3.5" />}>
+          <span className="hidden lg:inline">Deck options</span>
+        </Button>
+      </DM.Trigger>
+      <DM.Portal>
+        <DM.Content align="end" sideOffset={6} className="z-50 w-[300px] rounded-lg border border-line bg-raised p-1.5 shadow-pop">
+          {items.map((i) => (
+            <DM.CheckboxItem
+              key={i.key}
+              checked={opts[i.key]}
+              onCheckedChange={(v) => onChange({ ...opts, [i.key]: v === true })}
+              onSelect={(e) => e.preventDefault()}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-[13px] outline-none data-[highlighted]:bg-sunken"
+            >
+              <span className="flex size-4 items-center justify-center rounded border border-line-strong">
+                <DM.ItemIndicator>
+                  <Check className="size-3" />
+                </DM.ItemIndicator>
+              </span>
+              {i.label}
+            </DM.CheckboxItem>
+          ))}
+        </DM.Content>
+      </DM.Portal>
+    </DM.Root>
   )
 }

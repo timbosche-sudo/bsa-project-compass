@@ -2,7 +2,7 @@ import { Maximize } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 import { useProject } from '@/app/project'
-import { buildSlides, Slide, SlideStage, type DeckOptions } from './Slides'
+import { buildSlides, DEFAULT_DECK, Slide, SlideStage, type DeckOptions } from './Slides'
 import { workshopChannel, type ChannelMessage } from './WorkshopPage'
 
 /**
@@ -14,7 +14,7 @@ export default function AudiencePage() {
   const { projectId = '' } = useParams()
   const { data } = useProject()
   const [key, setKey] = useState<string | null>(null)
-  const [opts, setOpts] = useState<DeckOptions>({ showStatus: true, hideNotAdopted: false })
+  const [opts, setOpts] = useState<DeckOptions>(DEFAULT_DECK)
   const [hint, setHint] = useState(true)
 
   useEffect(() => {

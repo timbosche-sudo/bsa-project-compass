@@ -4,37 +4,71 @@ import { useProject } from '@/app/project'
 import { BSA } from '@/brand/brand'
 import { BsaLogo, BsaRedBox } from '@/brand/BsaLogo'
 import { cx } from '@/components/ui'
-import { APPROVAL_LABELS, CATEGORY_LABELS } from '@/domain/labels'
+import { alignmentItems } from '@/domain/alignment'
+import { ALIGNMENT_STATUS_LABELS, APPROVAL_LABELS, CATEGORY_LABELS, HEARD_SECTION_LABELS } from '@/domain/labels'
 import { evidenceFor } from '@/domain/traceability'
-import type { ApprovalStatus, GuidingPrinciple, ProjectData, WinTheme, WorkshopSession } from '@/domain/types'
+import { HEARD_SECTIONS, type AlignmentStatus, type ApprovalStatus, type GuidingPrinciple, type HeardSection, type ProjectData, type WinTheme, type WorkshopSession } from '@/domain/types'
 import type { FrameworkKind } from '@/domain/workshop'
 import { InlineField } from './InlineField'
 import { drafts, useWorkshopActions, type EditableField } from './state'
 
 export type Mode = 'present' | 'edit'
 
+export type Chapter = 1 | 2 | 3 | 4
+
+export const CHAPTERS: Record<Chapter, { title: string; purpose: string }> = {
+  1: { title: 'What We Heard', purpose: 'What you told us matters most.' },
+  2: { title: 'What We Believe', purpose: 'Our interpretation, and the direction we recommend.' },
+  3: { title: 'What Will Guide Us', purpose: 'The principles that will shape every design decision.' },
+  4: { title: 'What Success Could Look Like', purpose: 'If we deliver on this vision, what should be different or better?' },
+}
+
 export interface SlideDef {
   key: string
-  kind: 'title' | 'winTheme' | 'overview' | 'principle' | 'summary'
+  kind: 'title' | 'chapter' | 'heard' | 'pov' | 'winTheme' | 'overview' | 'principle' | 'outcomes' | 'discussion' | 'summary'
   id?: string
   label: string
+  chapter?: Chapter
 }
 
 export interface DeckOptions {
   showStatus: boolean
   hideNotAdopted: boolean
+  /** Show one or two illustrative design opportunities on each principle slide. */
+  showOpportunities: boolean
+  /** Show a supporting quote on principle slides. */
+  showEvidence: boolean
 }
 
+export const DEFAULT_DECK: DeckOptions = { showStatus: true, hideNotAdopted: false, showOpportunities: true, showEvidence: false }
+
+/** Owner-facing content: reviewed, marked for the presentation. */
+export const presentableHeard = (data: ProjectData, section?: HeardSection) =>
+  [...data.heard].filter((h) => h.inPresentation && h.reviewed && (!section || h.section === section)).sort((a, b) => a.order - b.order)
+export const presentableOutcomes = (data: ProjectData) => {
+  const order = new Map([...data.principles].sort((a, b) => a.order - b.order).map((p, i) => [p.id, i]))
+  return data.outcomes.filter((o) => o.inPresentation).sort((a, b) => (order.get(a.principleId) ?? 99) - (order.get(b.principleId) ?? 99) || a.order - b.order)
+}
+
+/** The default Owner presentation: four chapters, beginning with what BSA heard and leading with its recommendation. */
 export function buildSlides(data: ProjectData, opts: DeckOptions): SlideDef[] {
   const keep = (s: ApprovalStatus) => s !== 'superseded' && !(opts.hideNotAdopted && s === 'not_adopted')
   const wts = data.winThemes.filter((w) => keep(w.status))
   const principles = [...data.principles].sort((a, b) => a.order - b.order).filter((p) => keep(p.status))
+  const heard = HEARD_SECTIONS.filter((sec) => presentableHeard(data, sec).length > 0)
+  const chapter = (n: Chapter): SlideDef => ({ key: `chapter:${n}`, kind: 'chapter', id: String(n), label: `${n}. ${CHAPTERS[n].title}`, chapter: n })
   return [
     { key: 'title', kind: 'title', label: 'Title' },
-    ...wts.map((w) => ({ key: `winTheme:${w.id}`, kind: 'winTheme' as const, id: w.id, label: `${w.code} ${w.statement}` })),
-    { key: 'overview', kind: 'overview', label: `${data.project.terminology.guidingPrinciple}s` },
-    ...principles.map((p) => ({ key: `principle:${p.id}`, kind: 'principle' as const, id: p.id, label: `${p.code} ${p.title}` })),
-    { key: 'summary', kind: 'summary', label: 'Outcomes' },
+    ...(heard.length ? [chapter(1), ...heard.map((sec) => ({ key: `heard:${sec}`, kind: 'heard' as const, id: sec, label: HEARD_SECTION_LABELS[sec], chapter: 1 as const }))] : []),
+    chapter(2),
+    ...(data.pointOfView?.centralAmbition ? [{ key: 'pov', kind: 'pov' as const, label: 'Our point of view', chapter: 2 as const }] : []),
+    ...wts.map((w) => ({ key: `winTheme:${w.id}`, kind: 'winTheme' as const, id: w.id, label: `${w.code} ${w.statement}`, chapter: 2 as const })),
+    chapter(3),
+    { key: 'overview', kind: 'overview', label: `${data.project.terminology.guidingPrinciple}s`, chapter: 3 },
+    ...principles.map((p) => ({ key: `principle:${p.id}`, kind: 'principle' as const, id: p.id, label: `${p.code} ${p.title}`, chapter: 3 as const })),
+    ...(presentableOutcomes(data).length ? [chapter(4), { key: 'outcomes', kind: 'outcomes' as const, label: 'Potential outcomes', chapter: 4 as const }] : []),
+    { key: 'discussion', kind: 'discussion', label: 'For discussion' },
+    { key: 'summary', kind: 'summary', label: 'Where we are aligned' },
   ]
 }
 
@@ -124,6 +158,16 @@ export function Slide(props: SlideProps) {
       return <PrincipleSlide {...props} />
     case 'summary':
       return <SummarySlide {...props} />
+    case 'chapter':
+      return <ChapterSlide {...props} />
+    case 'heard':
+      return <HeardSlide {...props} />
+    case 'pov':
+      return <PovSlide {...props} />
+    case 'outcomes':
+      return <OutcomesSlide {...props} />
+    case 'discussion':
+      return <DiscussionSlide {...props} />
   }
 }
 
@@ -290,15 +334,18 @@ function PrincipleSlide({ slide, mode, index, total, opts }: SlideProps) {
   if (!p) return <Missing />
   const active = [...data.principles].sort((a, b) => a.order - b.order).filter((x) => x.status !== 'superseded' && !(opts.hideNotAdopted && x.status === 'not_adopted'))
   const n = active.findIndex((x) => x.id === p.id) + 1
-  const evidence = evidenceFor(data, { type: 'principle', id: p.id }).all.length
+  const ev = evidenceFor(data, { type: 'principle', id: p.id }).all
+  const opportunities = opts.showOpportunities ? data.opportunities.filter((o) => o.inPresentation && o.principleIds.includes(p.id)).sort((a, b) => a.order - b.order).slice(0, 2) : []
+  const quote = opts.showEvidence ? (ev.find((s) => s.kind === 'aspiration' || s.kind === 'requirement' || s.kind === 'nonnegotiable') ?? ev[0]) : undefined
+  const aside = !!p.whyItMatters || opportunities.length > 0 || !!quote
   return (
     <div className="absolute inset-0">
       <Header title={`${data.project.terminology.guidingPrinciple} ${String(n).padStart(2, '0')}`} detail={CATEGORY_LABELS[p.category]} status={opts.showStatus ? <StatusPill status={p.status} /> : undefined} />
-      <div className="absolute top-[12cqw] left-[6cqw] w-[80cqw]">
-        <h2 className="text-[5.2cqw] leading-[1.06] font-black">
+      <div className={cx('absolute top-[12cqw] left-[6cqw]', aside ? 'w-[52cqw]' : 'w-[80cqw]')}>
+        <h2 className={cx('leading-[1.06] font-black', aside ? 'text-[4.4cqw]' : 'text-[5.2cqw]')}>
           <Editable kind="principle" item={p} field="title" mode={mode} label="Title" placeholder="Principle title" singleLine />
         </h2>
-        <div className="mt-[2.2cqw] text-[2.5cqw] leading-[1.35]">
+        <div className={cx('mt-[2.2cqw] leading-[1.35]', aside ? 'text-[2.2cqw]' : 'text-[2.5cqw]')}>
           <Editable kind="principle" item={p} field="statement" mode={mode} label="Statement" placeholder="What success must look like" />
         </div>
         <div className="mt-[1.8cqw] max-w-[68cqw] text-[1.45cqw] leading-[1.55]" style={{ color: S.muted }}>
@@ -306,9 +353,42 @@ function PrincipleSlide({ slide, mode, index, total, opts }: SlideProps) {
         </div>
         <ApprovalStamp item={p} />
       </div>
-      {evidence > 0 && (
+      {aside && (
+        <div className="absolute top-[12cqw] right-[4.5cqw] w-[28cqw] space-y-[2cqw]">
+          {p.whyItMatters && (
+            <div className="border-t pt-[1cqw]" style={{ borderColor: S.ink }}>
+              <Caps>Why it matters</Caps>
+              <p className="mt-[0.8cqw] line-clamp-6 text-[1.3cqw] leading-[1.5]" style={{ color: S.muted }}>
+                {p.whyItMatters}
+              </p>
+            </div>
+          )}
+          {opportunities.length > 0 && (
+            <div className="border-t pt-[1cqw]" style={{ borderColor: S.ink }}>
+              <Caps>Design opportunities</Caps>
+              <ul className="mt-[0.8cqw] space-y-[1cqw]">
+                {opportunities.map((o) => (
+                  <li key={o.id}>
+                    <div className="text-[1.45cqw] leading-[1.25] font-black">{o.title}</div>
+                    {o.description && <div className="mt-[0.3cqw] line-clamp-2 text-[1.15cqw] leading-[1.45]" style={{ color: S.muted }}>{o.description}</div>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {quote && (
+            <figure className="border-t pt-[1cqw]" style={{ borderColor: S.ink }}>
+              <blockquote className="line-clamp-4 text-[1.3cqw] leading-[1.45] italic" style={{ color: S.teal }}>
+                “{quote.originalText}”
+              </blockquote>
+              {quote.speaker && <figcaption className="mt-[0.4cqw] text-[1cqw]" style={{ color: S.muted }}>— {quote.speaker}</figcaption>}
+            </figure>
+          )}
+        </div>
+      )}
+      {ev.length > 0 && (
         <div className="absolute right-[4.5cqw] bottom-[6cqw] text-[1.05cqw]" style={{ color: S.muted }}>
-          Grounded in {evidence} stakeholder and Owner statement{evidence === 1 ? '' : 's'}
+          Grounded in {ev.length} stakeholder and Owner statement{ev.length === 1 ? '' : 's'}
         </div>
       )}
       <Footer index={index} total={total} />
@@ -316,31 +396,178 @@ function PrincipleSlide({ slide, mode, index, total, opts }: SlideProps) {
   )
 }
 
-function SummarySlide({ index, total, opts }: SlideProps) {
+function ChapterSlide({ slide, index, total }: SlideProps) {
+  const n = Number(slide.id) as Chapter
+  const c = CHAPTERS[n]
+  return (
+    <div className="absolute inset-0" style={{ background: S.ink, color: S.paper }}>
+      <div className="absolute top-[14cqw] left-[8cqw] w-[76cqw]">
+        <div className="text-[9cqw] leading-none font-black tabular-nums" style={{ color: S.teal }}>
+          {String(n).padStart(2, '0')}
+        </div>
+        <h2 className="mt-[2.5cqw] text-[5.6cqw] leading-[1.05] font-black">{c.title}</h2>
+        <div className="mt-[2.4cqw] h-px w-[10cqw]" style={{ background: S.paper }} />
+        <p className="mt-[2cqw] text-[2cqw] leading-[1.4]" style={{ color: 'rgba(255,255,255,0.8)' }}>
+          {c.purpose}
+        </p>
+      </div>
+      <Footer index={index} total={total} dark />
+    </div>
+  )
+}
+
+function HeardSlide({ slide, index, total }: SlideProps) {
   const { data } = useProject()
-  const items = [
-    ...data.winThemes.filter((w) => w.status !== 'superseded').map((w) => ({ code: w.code, title: w.statement, status: w.status })),
-    ...[...data.principles].sort((a, b) => a.order - b.order).filter((p) => p.status !== 'superseded').map((p) => ({ code: p.code, title: p.title, status: p.status })),
-  ].filter((i) => !(opts.hideNotAdopted && i.status === 'not_adopted'))
-  const groups: { label: string; statuses: ApprovalStatus[]; dot: string }[] = [
-    { label: 'Adopted', statuses: ['approved'], dot: BSA.green },
-    { label: 'In discussion', statuses: ['in_review', 'proposed'], dot: BSA.lightBlue },
-    { label: 'Needs refinement', statuses: ['needs_refinement'], dot: BSA.yellow },
-    { label: 'Not adopted', statuses: ['not_adopted'], dot: BSA.red },
-  ]
+  const section = slide.id as HeardSection
+  const items = presentableHeard(data, section).slice(0, 6)
+  const cols = items.length <= 2 ? items.length || 1 : 3
   return (
     <div className="absolute inset-0">
-      <Header title="Workshop outcomes" />
+      <Header title="What we heard" detail={HEARD_SECTION_LABELS[section]} />
+      <h2 className="absolute top-[10.5cqw] left-[6cqw] text-[3.4cqw] font-black">{HEARD_SECTION_LABELS[section]}</h2>
+      <div className="absolute top-[17.5cqw] right-[4.5cqw] left-[6cqw] grid gap-x-[3cqw] gap-y-[2.6cqw]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        {items.map((h) => {
+          const quote = h.evidence.filter((e) => e.type === 'statement').map((e) => data.statements.find((x) => x.id === e.id)).find(Boolean)
+          return (
+            <div key={h.id} className="border-t pt-[1.1cqw]" style={{ borderColor: S.ink }}>
+              <div className="text-[2cqw] leading-[1.15] font-black">{h.title}</div>
+              {h.narrative && (
+                <p className={cx('mt-[0.7cqw] text-[1.3cqw] leading-[1.5]', items.length > 3 ? 'line-clamp-3' : 'line-clamp-5')} style={{ color: S.muted }}>
+                  {h.narrative}
+                </p>
+              )}
+              {quote && (
+                <p className="mt-[1cqw] line-clamp-3 text-[1.25cqw] leading-[1.45] italic" style={{ color: S.teal }}>
+                  “{quote.originalText}”{quote.speaker && <span className="not-italic" style={{ color: S.muted }}> — {quote.speaker}</span>}
+                </p>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <Footer index={index} total={total} />
+    </div>
+  )
+}
+
+function PovSlide({ index, total }: SlideProps) {
+  const { data } = useProject()
+  const pov = data.pointOfView
+  if (!pov) return <Missing />
+  return (
+    <div className="absolute inset-0" style={{ background: S.ink, color: S.paper }}>
+      <Header dark title="What we believe" detail="Our point of view" />
+      <div className="absolute top-[13cqw] left-[6cqw] w-[80cqw]">
+        <p className="text-[4cqw] leading-[1.15] font-black">{pov.centralAmbition}</p>
+        <div className="mt-[3.5cqw] grid grid-cols-2 gap-[4cqw]">
+          {pov.opportunity && (
+            <div className="border-t pt-[1cqw]" style={{ borderColor: S.paper }}>
+              <Caps dark>The opportunity</Caps>
+              <p className="mt-[0.8cqw] text-[1.5cqw] leading-[1.5]" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                {pov.opportunity}
+              </p>
+            </div>
+          )}
+          {pov.connectingIdea && (
+            <div className="border-t pt-[1cqw]" style={{ borderColor: S.paper }}>
+              <Caps dark>What connects it</Caps>
+              <p className="mt-[0.8cqw] text-[1.5cqw] leading-[1.5]" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                {pov.connectingIdea}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+      <Footer index={index} total={total} dark />
+    </div>
+  )
+}
+
+function OutcomesSlide({ index, total }: SlideProps) {
+  const { data } = useProject()
+  const items = presentableOutcomes(data).slice(0, 8)
+  const cols = items.length <= 4 ? 2 : 4
+  return (
+    <div className="absolute inset-0">
+      <Header title="What success could look like" detail="Illustrative — to be shaped together" />
+      <h2 className="absolute top-[10.5cqw] left-[6cqw] w-[80cqw] text-[3cqw] leading-[1.15] font-black">If we deliver on this vision, what should be different or better?</h2>
+      <div className="absolute top-[19cqw] right-[4.5cqw] left-[6cqw] grid gap-x-[2.6cqw] gap-y-[2.2cqw]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        {items.map((o) => {
+          const p = data.principles.find((x) => x.id === o.principleId)
+          return (
+            <div key={o.id} className="border-t pt-[1cqw]" style={{ borderColor: S.ink }}>
+              <Caps muted>{p?.title ?? ''}</Caps>
+              <div className="mt-[0.7cqw] text-[1.75cqw] leading-[1.25] font-black">{o.statement}</div>
+              {o.aspiration && <div className="mt-[0.5cqw] text-[1cqw]" style={{ color: S.muted }}>An aspiration — how to measure it is still to be defined</div>}
+            </div>
+          )
+        })}
+      </div>
+      <Footer index={index} total={total} />
+    </div>
+  )
+}
+
+function DiscussionSlide({ index, total }: SlideProps) {
+  const { data } = useProject()
+  const t = data.project.terminology
+  const prompts = [
+    `Does this ${t.winTheme.toLowerCase()} describe what you want this project to be?`,
+    `Which ${t.guidingPrinciple.toLowerCase()}s feel right — and which need refining?`,
+    'What is missing, or what would you say differently?',
+  ]
+  const tensions = data.pointOfView?.tensions
+  return (
+    <div className="absolute inset-0">
+      <Header title="For discussion" />
+      <div className={cx('absolute top-[12cqw] left-[6cqw]', tensions ? 'w-[50cqw]' : 'w-[80cqw]')}>
+        <ol className="space-y-[2.4cqw]">
+          {prompts.map((q, i) => (
+            <li key={q} className="flex gap-[2cqw]">
+              <span className="text-[3cqw] leading-none font-black tabular-nums" style={{ color: S.teal }}>
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="text-[2.6cqw] leading-[1.2] font-black">{q}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      {tensions && (
+        <div className="absolute top-[12cqw] right-[4.5cqw] w-[28cqw] border-t pt-[1cqw]" style={{ borderColor: S.ink }}>
+          <Caps>Tensions to navigate together</Caps>
+          <p className="mt-[0.8cqw] text-[1.35cqw] leading-[1.55]" style={{ color: S.muted }}>
+            {tensions}
+          </p>
+        </div>
+      )}
+      <Footer index={index} total={total} />
+    </div>
+  )
+}
+
+const ALIGNMENT_DOT: Record<AlignmentStatus, string> = { aligned: BSA.green, aligned_with_refinements: BSA.lightBlue, needs_discussion: BSA.yellow, not_reviewed: BSA.black50 }
+
+/** Live view of where the Owner stands, from responses recorded in this session. Nothing counts as aligned unless recorded. */
+function SummarySlide({ index, total, session }: SlideProps) {
+  const { data } = useProject()
+  const items = alignmentItems(data).map((i) => ({
+    ...i,
+    status: (session ? data.alignment.find((r) => r.sessionId === session.id && r.target.type === i.type && r.target.id === i.id)?.status : undefined) ?? 'not_reviewed',
+  }))
+  const groups: AlignmentStatus[] = ['aligned', 'aligned_with_refinements', 'needs_discussion', 'not_reviewed']
+  return (
+    <div className="absolute inset-0">
+      <Header title="Where we are aligned" detail={session ? session.code : undefined} />
       <h2 className="absolute top-[10.5cqw] left-[6cqw] text-[3.4cqw] font-black">Where we landed</h2>
       <div className="absolute top-[17cqw] right-[4.5cqw] left-[6cqw] grid grid-cols-4 gap-[2.4cqw]">
         {groups.map((g) => {
-          const xs = items.filter((i) => g.statuses.includes(i.status))
+          const xs = items.filter((i) => i.status === g)
           return (
-            <div key={g.label}>
+            <div key={g}>
               <div className="flex items-end justify-between border-b pb-[0.7cqw]" style={{ borderColor: S.ink }}>
-                <span className="flex items-center gap-[0.6cqw] text-[1.15cqw] font-black tracking-[0.1em] uppercase">
-                  <span className="rounded-full" style={{ width: '0.8cqw', height: '0.8cqw', background: g.dot }} />
-                  {g.label}
+                <span className="flex items-center gap-[0.6cqw] text-[1.05cqw] font-black tracking-[0.08em] uppercase">
+                  <span className="rounded-full" style={{ width: '0.8cqw', height: '0.8cqw', background: ALIGNMENT_DOT[g] }} />
+                  {ALIGNMENT_STATUS_LABELS[g]}
                 </span>
                 <span className="text-[2.6cqw] leading-none font-black tabular-nums">{xs.length}</span>
               </div>

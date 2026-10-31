@@ -8,11 +8,12 @@ import { Badge, Button, Callout, IconButton, Input, Select, Tabs, Textarea } fro
 import { newId } from '@/domain/ids'
 import type { GuidingPrinciple, PrincipleContent, VersionEntry, WinTheme, WinThemeContent, WorkshopAction, WorkshopSession } from '@/domain/types'
 import { itemKey, type FrameworkKind } from '@/domain/workshop'
+import { AlignmentCapture } from './AlignmentCapture'
 import { SessionDialog, SummaryDialog } from './dialogs'
 import { useSaveStatus } from './state'
 
 /** Debounced autosaving textarea for notes. */
-function AutoNotes({ value, onSave, label, placeholder, rows = 6 }: { value: string; onSave: (v: string) => Promise<boolean>; label: string; placeholder?: string; rows?: number }) {
+export function AutoNotes({ value, onSave, label, placeholder, rows = 6 }: { value: string; onSave: (v: string) => Promise<boolean>; label: string; placeholder?: string; rows?: number }) {
   const { setDirty, track } = useSaveStatus()
   const [text, setText] = useState(value)
   const timer = useRef<number | null>(null)
@@ -50,10 +51,12 @@ function AutoNotes({ value, onSave, label, placeholder, rows = 6 }: { value: str
   )
 }
 
-type Tab = 'notes' | 'evidence' | 'history' | 'session'
+type Tab = 'response' | 'notes' | 'evidence' | 'history' | 'session'
 
-export function FacilitatorPanel({ item, kind, session, onSelectSession }: { item: WinTheme | GuidingPrinciple | null; kind: FrameworkKind | null; session: WorkshopSession | null; onSelectSession: (id: string) => void }) {
-  const [tab, setTab] = useState<Tab>('notes')
+export function FacilitatorPanel({ item, kind, session, onSelectSession, slideKey, slideLabel }: { item: WinTheme | GuidingPrinciple | null; kind: FrameworkKind | null; session: WorkshopSession | null; onSelectSession: (id: string) => void; slideKey: string; slideLabel: string }) {
+  const [chosen, setTab] = useState<Tab>('response')
+  // Owner responses apply to the vision and principles; other slides open on presenter notes.
+  const tab: Tab = chosen === 'response' && !item ? 'notes' : chosen
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-2 border-b border-line bg-warn-soft/60 px-4 py-2 text-[12px] text-warn">
@@ -65,6 +68,7 @@ export function FacilitatorPanel({ item, kind, session, onSelectSession }: { ite
           value={tab}
           onChange={setTab}
           tabs={[
+            { value: 'response', label: 'Owner response' },
             { value: 'notes', label: 'Notes' },
             { value: 'evidence', label: 'Evidence' },
             { value: 'history', label: 'History' },
@@ -73,7 +77,8 @@ export function FacilitatorPanel({ item, kind, session, onSelectSession }: { ite
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 scroll-thin">
-        {tab === 'notes' && <NotesTab item={item} kind={kind} session={session} onSession={() => setTab('session')} />}
+        {tab === 'response' && item && kind && <AlignmentCapture type={kind} id={item.id} code={item.code} session={session} />}
+        {tab === 'notes' && <NotesTab item={item} kind={kind} session={session} onSession={() => setTab('session')} slideKey={slideKey} slideLabel={slideLabel} />}
         {tab === 'evidence' && (item && kind ? <EvidencePanel target={{ type: kind, id: item.id }} allowLink={item.status !== 'approved'} /> : <p className="text-[13px] text-muted">Select a vision or principle slide to see its supporting evidence.</p>)}
         {tab === 'history' && <HistoryTab item={item} kind={kind} />}
         {tab === 'session' && <SessionTab session={session} onSelectSession={onSelectSession} />}
@@ -82,7 +87,7 @@ export function FacilitatorPanel({ item, kind, session, onSelectSession }: { ite
   )
 }
 
-function NotesTab({ item, kind, session, onSession }: { item: WinTheme | GuidingPrinciple | null; kind: FrameworkKind | null; session: WorkshopSession | null; onSession: () => void }) {
+function NotesTab({ item, kind, session, onSession, slideKey, slideLabel }: { item: WinTheme | GuidingPrinciple | null; kind: FrameworkKind | null; session: WorkshopSession | null; onSession: () => void; slideKey: string; slideLabel: string }) {
   const { run, can } = useProject()
   if (!session)
     return (
@@ -97,16 +102,20 @@ function NotesTab({ item, kind, session, onSession }: { item: WinTheme | Guiding
   const editable = can('workshop.facilitate') && session.status !== 'closed'
   return (
     <div className="space-y-5">
-      {item && kind && (
-        <div>
-          <div className="eyebrow mb-1.5">Private notes · {item.code}</div>
-          {editable ? (
-            <AutoNotes key={item.id} label={`Notes for ${item.code}`} value={session.notes[itemKey(kind, item.id)] ?? ''} placeholder="Owner comments, concerns, wording ideas…" onSave={async (text) => (await run({ type: 'workshop.setNote', id: session.id, itemKey: itemKey(kind, item.id), text })) !== undefined} />
-          ) : (
-            <p className="text-[13px] whitespace-pre-wrap">{session.notes[itemKey(kind, item.id)] || '—'}</p>
-          )}
-        </div>
-      )}
+      {(() => {
+        const key = item && kind ? itemKey(kind, item.id) : slideKey
+        const label = item ? item.code : slideLabel
+        return (
+          <div>
+            <div className="eyebrow mb-1.5">Presenter notes · {label}</div>
+            {editable ? (
+              <AutoNotes key={key} label={`Notes for ${label}`} value={session.notes[key] ?? ''} placeholder="Talking points, Owner comments, wording ideas…" onSave={async (text) => (await run({ type: 'workshop.setNote', id: session.id, itemKey: key, text })) !== undefined} />
+            ) : (
+              <p className="text-[13px] whitespace-pre-wrap">{session.notes[key] || '—'}</p>
+            )}
+          </div>
+        )
+      })()}
       <div>
         <div className="eyebrow mb-1.5">General session notes</div>
         {editable ? (

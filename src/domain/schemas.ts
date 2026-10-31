@@ -420,7 +420,7 @@ export const commandSchema = z.discriminatedUnion('type', [
       })
       .partial(),
   }),
-  cmd('workshop.setNote', { id, itemKey: z.string().regex(/^(winTheme|principle):[\w-]{1,64}$/), text: z.string().max(10000) }),
+  cmd('workshop.setNote', { id, itemKey: z.string().regex(/^((winTheme|principle|chapter|heard):[\w-]{1,64}|title|pov|overview|outcomes|discussion|summary)$/), text: z.string().max(10000) }),
   cmd('workshop.start', { id }),
   cmd('workshop.end', { id }),
 ])
