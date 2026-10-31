@@ -11,6 +11,7 @@ import { CATEGORY_LABELS } from '@/domain/labels'
 import { can as roleCan, roleFor } from '@/domain/permissions'
 import type { GuidingPrinciple, PrincipleCategory, PrincipleContent, WinTheme, WorkshopAttendee, WorkshopSession } from '@/domain/types'
 import { wordingOf } from '@/domain/wording'
+import { ALIGNMENT_STATUS_LABELS } from '@/domain/labels'
 import { meetingSummary, type FrameworkKind } from '@/domain/workshop'
 
 // ---------------------------------------------------------------------------
@@ -257,10 +258,11 @@ export function SummaryDialog({ open, onOpenChange, session }: { open: boolean; 
   const s = useMemo(() => (open ? meetingSummary(data, session.id) : null), [open, data, session.id])
   const [busy, setBusy] = useState(false)
   if (!s) return null
-  const download = async () => {
+  const download = async (format: 'pdf' | 'docx' = 'pdf') => {
     setBusy(true)
     try {
-      await (await import('@/exporters/workshopPdf')).meetingSummaryPdf(data, session.id)
+      const x = await import('@/exporters/workshopPdf')
+      await (format === 'pdf' ? x.meetingSummaryPdf : x.meetingSummaryDocx)(data, session.id)
       notify('ok', 'Meeting summary downloaded')
     } catch (e) {
       notify('error', `Export failed: ${e instanceof Error ? e.message : String(e)}`)
@@ -295,9 +297,14 @@ export function SummaryDialog({ open, onOpenChange, session }: { open: boolean; 
       title={`Meeting summary — ${session.code} ${session.title}`}
       description={`Generated from the recorded session${s.draft ? ' · DRAFT until the session is ended' : ''}. Review before distribution.`}
       footer={
-        <Button variant="primary" icon={<FileDown className="size-4" />} loading={busy} onClick={download}>
-          Download PDF
-        </Button>
+        <>
+          <Button icon={<FileDown className="size-4" />} disabled={busy} onClick={() => download('docx')}>
+            Download Word (editable)
+          </Button>
+          <Button variant="primary" icon={<FileDown className="size-4" />} loading={busy} onClick={() => download('pdf')}>
+            Download PDF
+          </Button>
+        </>
       }
     >
       <div className="space-y-6">
@@ -318,6 +325,23 @@ export function SummaryDialog({ open, onOpenChange, session }: { open: boolean; 
         <section>
           <h3 className="eyebrow mb-2">Attendees</h3>
           <p className="text-[13px] text-ink-2">{session.attendees.map((a) => `${a.name}${a.organization ? ` (${a.organization})` : ''}`).join(' · ') || 'None recorded'}</p>
+        </section>
+        <section>
+          <h3 className="eyebrow mb-2">Owner responses ({s.alignment.length})</h3>
+          {s.alignment.length === 0 ? (
+            <p className="text-[13px] text-muted">No Owner responses were recorded in this session.</p>
+          ) : (
+            <ul className="space-y-2">
+              {s.alignment.map((a) => (
+                <li key={a.code} className="text-[13.5px]">
+                  <span className="font-mono text-[11.5px] text-muted">{a.code}</span> {a.title} — <strong>{ALIGNMENT_STATUS_LABELS[a.status]}</strong>
+                  {a.refinements && <span className="block pl-12 text-[12.5px] text-ink-2">Refinements: {a.refinements}</span>}
+                  {a.questions && <span className="block pl-12 text-[12.5px] text-muted">Question: {a.questions}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {s.notReviewed.length > 0 && <p className="mt-2 text-[12.5px] text-muted">Not yet reviewed: {s.notReviewed.map((n) => n.code).join(', ')}. These are not treated as aligned.</p>}
         </section>
         <section>
           <h3 className="eyebrow mb-2">Adopted — exact approved wording ({s.adopted.length})</h3>
