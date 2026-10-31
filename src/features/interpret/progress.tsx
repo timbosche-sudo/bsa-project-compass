@@ -20,7 +20,7 @@ export function ProgressList({ outcome }: { outcome: PotentialOutcome }) {
   const items = [...outcome.evidenceOfProgress].sort((a, b) => b.date.localeCompare(a.date))
   return (
     <div className="space-y-2">
-      {items.length === 0 && !adding && <p className="text-[12.5px] text-faint italic">No evidence of progress recorded yet.</p>}
+      {items.length === 0 && !adding && <p className="text-[12.5px] text-muted italic">No evidence of progress recorded yet.</p>}
       <ul className="space-y-1.5">
         {items.map((p) => (
           <li key={p.id} className="flex items-start gap-2 rounded-md bg-sunken px-3 py-2 text-[12.5px]">
@@ -31,7 +31,7 @@ export function ProgressList({ outcome }: { outcome: PotentialOutcome }) {
               <p className="text-ink-2">{p.note}</p>
             </div>
             {can('framework.edit') && (
-              <button aria-label="Remove evidence of progress" className="rounded p-1 text-faint hover:text-danger" onClick={() => run({ type: 'outcome.removeProgress', id: outcome.id, progressId: p.id }, 'Removed')}>
+              <button aria-label="Remove evidence of progress" className="rounded p-1.5 text-muted hover:text-danger" onClick={() => run({ type: 'outcome.removeProgress', id: outcome.id, progressId: p.id }, 'Removed')}>
                 <Trash2 className="size-3.5" />
               </button>
             )}

@@ -112,7 +112,20 @@ function Workshop() {
   const index = Math.max(0, slides.findIndex((s) => s.key === requested))
   const slide = slides[index] ?? slides[0]
   const go = useCallback((key: string) => setParams((p) => { const n = new URLSearchParams(p); n.set('slide', key); return n }, { replace: true }), [setParams])
-  const step = useCallback((d: number) => go(slides[Math.min(slides.length - 1, Math.max(0, index + d))].key), [go, slides, index])
+  // Reads the slide from the URL at the moment of the key press, so rapid presses (e.g. a clicker) never use a stale position.
+  const step = useCallback(
+    (d: number) =>
+      setParams(
+        (p) => {
+          const at = Math.max(0, slides.findIndex((s) => s.key === p.get('slide')))
+          const n = new URLSearchParams(p)
+          n.set('slide', slides[Math.min(slides.length - 1, Math.max(0, at + d))].key)
+          return n
+        },
+        { replace: true },
+      ),
+    [setParams, slides],
+  )
   const jumpChapter = useCallback((n: Chapter) => {
     const target = slides.find((s) => s.key === `chapter:${n}`) ?? slides.find((s) => s.chapter === n)
     if (target) go(target.key)
@@ -440,7 +453,7 @@ function Workshop() {
             <IconButton label="Next slide (→)" disabled={index === slides.length - 1} onClick={() => step(1)}>
               <ChevronRight className="size-5" />
             </IconButton>
-            <span className="hidden text-[11.5px] text-faint lg:inline">Click text on the slide to edit · ← → navigate · P present · Ctrl+Z undo</span>
+            <span className="hidden text-[11.5px] text-muted lg:inline">Click text on the slide to edit · ← → navigate · P present · Ctrl+Z undo</span>
           </div>
         </main>
         {panel && (
@@ -561,7 +574,7 @@ function SlideRail({ slides, current, onSelect, onAddPrinciple, onAddWinTheme, o
               className={cx('group rounded-md', over === s.id && dragging !== s.id && 'ring-2 ring-accent')}
             >
               <button onClick={() => onSelect(s.key)} aria-current={s.key === current ? 'true' : undefined} className={cx('flex w-full items-start gap-2 rounded-md px-2 py-2 text-left', s.key === current ? 'bg-inverse text-on-inverse' : 'hover:bg-sunken', s.chapter && s.kind !== 'chapter' && 'pl-3', s.kind === 'chapter' && 'mt-2')}>
-                <span className={cx('w-5 shrink-0 pt-0.5 font-mono text-[10.5px] tabular-nums', s.key === current ? 'opacity-70' : 'text-faint')}>{i + 1}</span>
+                <span className={cx('w-5 shrink-0 pt-0.5 font-mono text-[10.5px] tabular-nums', s.key === current ? 'opacity-70' : 'text-muted')}>{i + 1}</span>
                 <span className="min-w-0 flex-1">
                   <span className={cx('line-clamp-2 leading-snug', s.kind === 'chapter' ? 'text-[11px] font-black tracking-[0.08em] uppercase' : 'text-[12.5px]', s.kind === 'title' || s.kind === 'overview' || s.kind === 'summary' || s.kind === 'discussion' ? 'font-semibold' : '')}>{s.label}</span>
                   {st && (

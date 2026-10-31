@@ -77,7 +77,7 @@ export function SuggestionCard({ s, onExplore }: { s: Suggestion; onExplore: (s:
           ))}
           {others.length > 0 && <LinkedChips refs={others} />}
           {!s.evidence.length && <p className="text-[12px] text-muted italic">No source reference. Treat this as an inference to test.</p>}
-          {card?.method && <p className="text-[11px] text-faint">Method: {card.method}</p>}
+          {card?.method && <p className="text-[11px] text-muted">Method: {card.method}</p>}
         </div>
       )}
 

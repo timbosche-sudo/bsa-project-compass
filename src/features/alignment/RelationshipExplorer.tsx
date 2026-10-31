@@ -242,7 +242,7 @@ function ListView({ graph, focus }: { graph: Graph; focus: Set<string> | null })
             const down = graph.edges.filter((e) => e.from === n.key).map((e) => ({ e, n: byKey.get(e.to)! }))
             const cell = (xs: typeof up) =>
               xs.length === 0 ? (
-                <span className="text-faint">—</span>
+                <span className="text-muted">—</span>
               ) : (
                 <ul className="space-y-0.5">
                   {xs.map(({ e, n: o }) => (

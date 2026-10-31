@@ -200,7 +200,7 @@ export function Meter({ value, label, tone = 'accent' }: { value: number; label:
 export function EmptyState({ title, children, action, icon }: { title: string; children?: ReactNode; action?: ReactNode; icon?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-line-strong px-6 py-12 text-center">
-      <div className="mb-3 text-faint">{icon ?? <Inbox className="size-6" aria-hidden />}</div>
+      <div className="mb-3 text-muted">{icon ?? <Inbox className="size-6" aria-hidden />}</div>
       <h3 className="text-[15px] font-semibold text-ink">{title}</h3>
       {children && <div className="mt-1 max-w-md text-[13px] text-muted">{children}</div>}
       {action && <div className="mt-4">{action}</div>}
@@ -367,5 +367,5 @@ export function KeyValue({ items }: { items: [ReactNode, ReactNode][] }) {
 }
 
 export function Unknown({ children = 'Unknown' }: { children?: ReactNode }) {
-  return <span className="text-faint italic">{children}</span>
+  return <span className="text-muted italic">{children}</span>
 }

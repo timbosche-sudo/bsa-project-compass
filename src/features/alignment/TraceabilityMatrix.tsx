@@ -39,13 +39,13 @@ export function TraceabilityMatrix() {
 
   const chips = (items: { id: string; code: string; title: string; via?: string }[], type: 'theme' | 'principle' | 'driver' | 'decision') =>
     items.length === 0 ? (
-      <span className="text-faint">—</span>
+      <span className="text-muted">—</span>
     ) : (
       <span className="flex flex-col gap-1">
         {items.map((i) => (
           <Link key={i.id} to={nodePath(data.project.id, { type, id: i.id })} className="group block leading-snug" title={i.title}>
             <span className="font-mono text-[11px] text-muted">{i.code}</span> <span className="text-ink-2 group-hover:underline">{i.title}</span>
-            {i.via && i.via !== 'direct' && <span className="ml-1 text-[10.5px] text-faint">via {i.via}</span>}
+            {i.via && i.via !== 'direct' && <span className="ml-1 text-[10.5px] text-muted">via {i.via}</span>}
           </Link>
         ))}
       </span>
@@ -97,7 +97,7 @@ export function TraceabilityMatrix() {
                 <Fragment key={r.statementId}>
                   <tr className={cx(expanded && '[&>td]:bg-sunken/60')}>
                     <td>
-                      <button aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${r.statementCode} evidence detail`} className="rounded p-0.5 text-muted hover:bg-sunken hover:text-ink" onClick={() => setOpen(expanded ? null : r.statementId)}>
+                      <button aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${r.statementCode} evidence detail`} className="rounded p-1.5 text-muted hover:bg-sunken hover:text-ink" onClick={() => setOpen(expanded ? null : r.statementId)}>
                         {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
                       </button>
                     </td>

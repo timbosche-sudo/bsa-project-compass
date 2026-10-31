@@ -125,12 +125,12 @@ function CanvasCard({ item }: { item: CanvasItem }) {
   const update = (patch: Partial<CanvasItem>, msg?: string) => run({ type: 'canvas.update', id: item.id, patch }, msg)
   const ws = WORKSPACES[item.context.workspace as Workspace]
   return (
-    <li className={cx('rounded-lg border border-line bg-surface p-3', item.state === 'worth_developing' && 'border-l-4 border-l-ok-fill', item.state === 'set_aside' && 'opacity-70')}>
+    <li className={cx('rounded-lg border border-line bg-surface p-3', item.state === 'worth_developing' && 'border-l-4 border-l-ok-fill', item.state === 'set_aside' && 'opacity-80')}>
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone="outline">{CANVAS_KIND_LABELS[item.kind]}</Badge>
         <Badge tone={item.origin === 'human' ? 'neutral' : 'ai'}>{item.origin === 'human' ? 'Human-authored' : `Started from ${methodLabel(item.origin).toLowerCase()}`}</Badge>
         {edit && (
-          <button aria-label={`Delete idea: ${item.title}`} className="ml-auto rounded p-1 text-faint hover:text-danger" onClick={async () => (await confirm({ title: 'Remove this idea?', confirmLabel: 'Remove', tone: 'danger' })).confirmed && run({ type: 'canvas.delete', id: item.id }, 'Removed')}>
+          <button aria-label={`Delete idea: ${item.title}`} className="ml-auto rounded p-1.5 text-muted hover:text-danger" onClick={async () => (await confirm({ title: 'Remove this idea?', confirmLabel: 'Remove', tone: 'danger' })).confirmed && run({ type: 'canvas.delete', id: item.id }, 'Removed')}>
             <Trash2 className="size-3.5" />
           </button>
         )}
@@ -174,7 +174,7 @@ function CanvasCard({ item }: { item: CanvasItem }) {
           </Button>
         )}
       </div>
-      <p className="mt-1.5 text-[11px] text-faint">
+      <p className="mt-1.5 text-[11px] text-muted">
         {ws ? `${ws.stage} · ${ws.label}` : 'Project'} · {personName(item.updatedBy)} · {formatDate(item.updatedAt)}
       </p>
       {picking && (

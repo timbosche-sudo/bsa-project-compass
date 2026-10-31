@@ -96,7 +96,7 @@ export default function FromVisionToDesignPage() {
                     <ArrowRight className="size-3" aria-hidden /> Design opportunities
                   </div>
                   {opportunities.length === 0 ? (
-                    <p className="text-[12.5px] text-faint italic">None captured.</p>
+                    <p className="text-[12.5px] text-muted italic">None captured.</p>
                   ) : (
                     <ul className="space-y-2.5">
                       {opportunities.map((o) => (
@@ -120,7 +120,7 @@ export default function FromVisionToDesignPage() {
                     <ArrowRight className="size-3" aria-hidden /> What success could look like
                   </div>
                   {outcomes.length === 0 ? (
-                    <p className="text-[12.5px] text-faint italic">None described.</p>
+                    <p className="text-[12.5px] text-muted italic">None described.</p>
                   ) : (
                     <ul className="space-y-4">
                       {outcomes.map((o) => (

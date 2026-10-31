@@ -127,15 +127,15 @@ function HeardRow({ h, first, last, onMove }: { h: HeardItem; first: boolean; la
         <div className="flex shrink-0 items-center gap-1">
           {edit && (
             <>
-              <button aria-label={`Move “${h.title}” up`} disabled={first} className="rounded p-1 text-faint hover:bg-sunken hover:text-ink disabled:opacity-30" onClick={() => onMove(-1)}>
+              <button aria-label={`Move “${h.title}” up`} disabled={first} className="rounded p-1.5 text-muted hover:bg-sunken hover:text-ink disabled:opacity-30" onClick={() => onMove(-1)}>
                 <ArrowUp className="size-3.5" />
               </button>
-              <button aria-label={`Move “${h.title}” down`} disabled={last} className="rounded p-1 text-faint hover:bg-sunken hover:text-ink disabled:opacity-30" onClick={() => onMove(1)}>
+              <button aria-label={`Move “${h.title}” down`} disabled={last} className="rounded p-1.5 text-muted hover:bg-sunken hover:text-ink disabled:opacity-30" onClick={() => onMove(1)}>
                 <ArrowDown className="size-3.5" />
               </button>
               <button
                 aria-label={`Delete “${h.title}”`}
-                className="rounded p-1 text-faint hover:bg-sunken hover:text-danger"
+                className="rounded p-1.5 text-muted hover:bg-sunken hover:text-danger"
                 onClick={async () => {
                   const r = await confirm({
                     title: 'Remove this item?',
@@ -306,7 +306,7 @@ function HeardPreview({ items }: { items: HeardItem[] }) {
                         {h.narrative && <p className="mt-0.5 text-[13.5px] leading-relaxed text-ink-2">{h.narrative}</p>}
                         {quote && (
                           <p className="mt-1.5 flex gap-1.5 text-[13px]">
-                            <Quote className="mt-0.5 size-3.5 shrink-0 text-faint" aria-hidden />
+                            <Quote className="mt-0.5 size-3.5 shrink-0 text-muted" aria-hidden />
                             <span>
                               <span className="quote">“{quote.originalText}”</span>
                               {quote.speaker && <span className="text-muted"> — {quote.speaker}</span>}

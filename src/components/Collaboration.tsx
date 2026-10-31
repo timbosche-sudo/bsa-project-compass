@@ -24,7 +24,7 @@ export function CommentThread({ target }: { target: NodeRef }) {
       {comments.length === 0 && <p className="text-[13px] text-muted">No open comments.</p>}
       <ul className="space-y-3">
         {comments.map((c) => (
-          <li key={c.id} className={cx('rounded-md border border-line px-3 py-2.5', c.resolved && 'opacity-60')}>
+          <li key={c.id} className={cx('rounded-md border border-line px-3 py-2.5', c.resolved && 'opacity-80')}>
             <div className="mb-1 flex items-center gap-2 text-[12px]">
               <span className="font-semibold text-ink">{personName(c.authorId)}</span>
               <span className="text-muted">{formatDate(c.createdAt, true)}</span>

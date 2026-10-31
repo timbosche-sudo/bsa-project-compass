@@ -1,9 +1,11 @@
 import { Lightbulb } from 'lucide-react'
-import { useState } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { useProject } from '@/app/project'
-import { Button, cx, InStageContext } from '@/components/ui'
-import { ThinkingPartnerPanel } from '@/features/thinking/ThinkingPartnerPanel'
+import { Button, cx, InStageContext, Loading } from '@/components/ui'
+
+// The Thinking Partner and its rules engine load the first time the panel is opened.
+const ThinkingPartnerPanel = lazy(() => import('@/features/thinking/ThinkingPartnerPanel').then((m) => ({ default: m.ThinkingPartnerPanel })))
 
 export interface StageStep {
   to: string
@@ -48,6 +50,13 @@ export function StageLayout({ stage }: { stage: StageDef }) {
   }
   const base = `/projects/${data.project.id}`
   const open = !!stage.thinking && partner
+  const toggle = useRef<HTMLButtonElement>(null)
+  // Focus moves into the panel only when someone opens it — not when it is restored on page load.
+  const [focusPanel, setFocusPanel] = useState(false)
+  const close = () => {
+    setPartner(false)
+    toggle.current?.focus()
+  }
   return (
     <div className={cx(open && 'xl:grid xl:grid-cols-[minmax(0,1fr)_440px] xl:items-start xl:gap-6')}>
       {/* Pages lay out against this container, so they adapt when the Thinking Partner is open. */}
@@ -62,7 +71,13 @@ export function StageLayout({ stage }: { stage: StageDef }) {
             <p className="mt-1 max-w-3xl text-[13px] text-muted">{stage.purpose}</p>
           </div>
           {stage.thinking && (
-            <Button size="sm" variant={open ? 'primary' : 'secondary'} icon={<Lightbulb className="size-4" />} onClick={() => setPartner(!partner)} aria-expanded={open}>
+            <Button ref={toggle} size="sm" variant={open ? 'primary' : 'secondary'} icon={<Lightbulb className="size-4" />} onClick={() => {
+                if (open) close()
+                else {
+                  setFocusPanel(true)
+                  setPartner(true)
+                }
+              }} aria-expanded={open} aria-controls="thinking-partner" aria-keyshortcuts="Escape">
               Thinking Partner
             </Button>
           )}
@@ -81,7 +96,7 @@ export function StageLayout({ stage }: { stage: StageDef }) {
                 )
               }
             >
-              {stage.number && <span className="font-mono text-[10.5px] opacity-60 tabular-nums">{i + 1}</span>}
+              {stage.number && <span className="font-mono text-[10.5px] opacity-80 tabular-nums">{i + 1}</span>}
               {s.label}
             </NavLink>
           ))}
@@ -93,8 +108,19 @@ export function StageLayout({ stage }: { stage: StageDef }) {
       </div>
       {open && (
         // Beside the work on desktop and iPad landscape; over it on narrower screens.
-        <div className="fixed inset-y-0 right-0 z-40 w-[min(440px,100vw)] shadow-pop xl:sticky xl:top-[4.5rem] xl:z-auto xl:h-[calc(100dvh-6rem)] xl:w-auto xl:overflow-hidden xl:rounded-lg xl:border xl:border-line xl:shadow-card">
-          <ThinkingPartnerPanel onClose={() => setPartner(false)} />
+        <div
+          id="thinking-partner"
+          onKeyDown={(e) => {
+            // Esc closes the panel, unless a dialog or an inline editor inside it is handling Esc.
+            if (e.key === 'Escape' && !document.querySelector('[role="dialog"]') && !(e.target as HTMLElement).closest('input, textarea, select')) {
+              e.stopPropagation()
+              close()
+            }
+          }}
+          className="fixed inset-y-0 right-0 z-40 w-[min(440px,100vw)] shadow-pop xl:sticky xl:top-[4.5rem] xl:z-auto xl:h-[calc(100dvh-6rem)] xl:w-auto xl:overflow-hidden xl:rounded-lg xl:border xl:border-line xl:shadow-card">
+          <Suspense fallback={<Loading label="Opening Thinking Partner" />}>
+            <ThinkingPartnerPanel onClose={close} focusOnOpen={focusPanel} />
+          </Suspense>
         </div>
       )}
     </div>

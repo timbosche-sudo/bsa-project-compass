@@ -57,7 +57,7 @@ export default function OwnerAlignmentPage() {
           {items.length === 0 ? (
             <EmptyState title="Nothing to align on yet">Draft a vision and principles in Interpret first.</EmptyState>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Table (scrolls horizontally on narrow screens)">
               <table className="table-base min-w-[680px]">
                 <thead>
                   <tr>
@@ -89,7 +89,7 @@ export default function OwnerAlignmentPage() {
                         <td className="text-[12.5px] text-ink-2">
                           {src?.refinements && <div>Refine: {src.refinements}</div>}
                           {src?.questions && <div className="text-muted">Question: {src.questions}</div>}
-                          {!src?.refinements && !src?.questions && <span className="text-faint">—</span>}
+                          {!src?.refinements && !src?.questions && <span className="text-muted">—</span>}
                         </td>
                         <td className="text-right">
                           {can('workshop.facilitate') && session?.status !== 'closed' && (

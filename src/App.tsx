@@ -7,18 +7,16 @@ import { ConfirmProvider } from '@/components/Dialog'
 import { ToastProvider } from '@/components/Toast'
 import { Button, EmptyState, ErrorState, Loading } from '@/components/ui'
 import { AccessDeniedError, type DataAdapter } from '@/data/adapter'
-import { SupabaseAuth } from '@/data/auth'
+import type { SupabaseAuth } from '@/data/auth'
 import { readConfig } from '@/data/config'
-import { DEFAULT_DEMO_PERSONA, DemoAdapter } from '@/data/demoAdapter'
-import { RemoteAdapter } from '@/data/remoteAdapter'
 import type { Person } from '@/domain/types'
 import { AppShell } from '@/layout/AppShell'
 import { BsaLogo } from '@/brand/BsaLogo'
-import ProjectHome from '@/features/home/ProjectHome'
 import { LegacyAlignment, LegacyIntelligence, LegacyVision } from '@/features/redirects'
 import { AlignStage, InterpretStage, MoreStage, UnderstandStage } from '@/layout/stages'
 import { NewProjectDialog } from '@/features/settings/NewProjectDialog'
 
+const ProjectHome = lazy(() => import('@/features/home/ProjectHome'))
 const IntelligencePage = lazy(() => import('@/features/intelligence/IntelligencePage'))
 const ThemesPage = lazy(() => import('@/features/understand/ThemesPage'))
 const QuestionsPage = lazy(() => import('@/features/understand/QuestionsPage'))
@@ -69,7 +67,7 @@ const router = createBrowserRouter(
             </AppShell>
           ),
           children: [
-            { index: true, element: <ProjectHome /> },
+            { index: true, element: page(<ProjectHome />) },
             {
               path: 'understand',
               element: <UnderstandStage />,
@@ -162,11 +160,14 @@ function Bootstrap({ children }: { children: ReactNode }) {
     ;(async () => {
       if (config.configError) throw new Error(config.configError)
       if (config.mode === 'demo') {
+        // Adapters load on demand: the demo seed data never ships in the secure build's start-up path, and vice versa.
+        const { DemoAdapter, DEFAULT_DEMO_PERSONA } = await import('@/data/demoAdapter')
         const adapter = new DemoAdapter()
         const identities = await adapter.listIdentities()
         setState({ status: 'ready', adapter, identities, actorId: DEFAULT_DEMO_PERSONA })
         return
       }
+      const [{ SupabaseAuth }, { RemoteAdapter }] = await Promise.all([import('@/data/auth'), import('@/data/remoteAdapter')])
       const auth = new SupabaseAuth(config.supabaseUrl!, config.supabaseAnonKey!, config.identityProvider)
       const session = await auth.restore()
       if (!session) return setState({ status: 'signin', auth })

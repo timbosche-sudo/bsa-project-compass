@@ -95,7 +95,7 @@ export function AlignmentCapture({ type, id, code, session, compact }: { type: A
         </Button>
       )}
       {current && (
-        <p className="text-[11px] text-faint">
+        <p className="text-[11px] text-muted">
           Recorded by {personName(current.recordedBy)} · {formatDate(current.at, true)}
         </p>
       )}

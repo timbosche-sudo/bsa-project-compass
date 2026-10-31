@@ -124,7 +124,7 @@ export function EvidencePanel({ target, allowLink = true }: { target: NodeRef; a
         <div key={g.title} className="space-y-2.5">
           <div className="flex items-baseline gap-2">
             <span className="eyebrow">{g.title}</span>
-            <span className="text-[11.5px] text-faint">{g.hint}</span>
+            <span className="text-[11.5px] text-muted">{g.hint}</span>
           </div>
           {g.items.map((s) => {
             const rel = directRels.find((r) => r.from.id === s.id && r.status === 'accepted')
@@ -321,7 +321,7 @@ export function RelationshipTypeSelect({ value, onChange }: { value: Relationshi
 
 export function LinkedChips({ refs, empty = 'None' }: { refs: NodeRef[]; empty?: string }) {
   const { data } = useProject()
-  if (!refs.length) return <span className="text-[12.5px] text-faint italic">{empty}</span>
+  if (!refs.length) return <span className="text-[12.5px] text-muted italic">{empty}</span>
   return (
     <span className="flex flex-wrap gap-1.5">
       {refs.map((r) => {

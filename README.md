@@ -88,7 +88,7 @@ npm run typecheck    # TypeScript project references (app, node, server)
 npm test             # Vitest unit tests (domain, exporters, adapters, server API)
 npm run build        # Type-check and production build to dist/
 npm run preview      # Serve the production build
-npm run test:e2e     # Playwright workflows (desktop, iPad Pro landscape and portrait, 1080p laptop)
+npm run test:e2e     # Playwright workflows (desktop, iPad Pro landscape and portrait, 1080p laptop) and WCAG 2.2 AA checks (axe)
 npm run verify:rls   # PostgreSQL row-level-security checks (needs local PostgreSQL binaries; run as non-root)
 npm run check        # typecheck + unit tests + build
 ```

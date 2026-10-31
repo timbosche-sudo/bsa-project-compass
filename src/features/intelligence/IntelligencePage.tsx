@@ -73,7 +73,7 @@ function SourcesTable() {
         <Select aria-label="Filter by type" className="w-auto" value={type} onChange={(e) => setType(e.target.value as SourceType | '')} options={[{ value: '', label: 'All types' }, ...optionsFrom(SOURCE_TYPE_LABELS)]} />
         <Select aria-label="Filter by confidentiality" className="w-auto" value={conf} onChange={(e) => setConf(e.target.value)} options={[{ value: '', label: 'All classifications' }, ...optionsFrom(CONFIDENTIALITY_LABELS)]} />
       </div>
-      <div className="overflow-x-auto scroll-thin">
+      <div className="overflow-x-auto scroll-thin" tabIndex={0} role="region" aria-label="Table (scrolls horizontally on narrow screens)">
         <table className="table-base min-w-[880px]">
           <thead>
             <tr>

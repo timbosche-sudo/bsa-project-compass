@@ -98,7 +98,7 @@ function OutcomeCard({ o, focused }: { o: PotentialOutcome; focused: boolean }) 
         {edit && (
           <button
             aria-label={`Delete ${o.code}`}
-            className="ml-auto rounded p-1 text-faint hover:bg-sunken hover:text-danger"
+            className="ml-auto rounded p-1.5 text-muted hover:bg-sunken hover:text-danger"
             onClick={async () => {
               const r = await confirm({ title: `Delete ${o.code}?`, body: 'Its evidence of progress will also be removed.', confirmLabel: 'Delete', tone: 'danger' })
               if (r.confirmed) run({ type: 'outcome.delete', id: o.id }, `${o.code} deleted`)

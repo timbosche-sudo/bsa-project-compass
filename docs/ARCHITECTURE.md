@@ -113,6 +113,10 @@ Four-chapter Owner presentation, Owner response capture (`AlignmentResponse`), i
 
 A contextual, rule-based Evidence Intelligence engine (`src/services/thinking/*`) behind a provider interface, with four thinking modes, structured suggestion cards, guided exploration and a Working Canvas whose ideas can be promoted into drafts. The approved-AI provider is present but unavailable. See [THINKING_PARTNER.md](THINKING_PARTNER.md).
 
+### Quality hardening (implemented)
+
+Automated WCAG 2.2 AA checks on 24 pages and the Thinking Partner, in both themes, with the findings fixed. Thinking Partner keyboard and focus behaviour. Start-up JavaScript cut from 217 KB to 106 KB gzipped. See [QUALITY.md](QUALITY.md).
+
 ### Revised roadmap (recommended order)
 
 1. **Secure backend verification (Stage 7), now the gate for real Owner workshops.** Provision Supabase staging, run the migrations and RLS checks there, deploy the API, configure Entra ID SSO, and run Workshop Mode end to end in remote mode. Add server push (Supabase Realtime) so audience windows update without polling.
@@ -120,7 +124,7 @@ A contextual, rule-based Evidence Intelligence engine (`src/services/thinking/*`
 3. **Design Driver refinements:** link drivers to workshop outcomes, and a driver review deck that reuses the slide stage.
 4. Upload pipeline: signed-URL uploads, virus scanning and text extraction feeding *proposed* statements.
 5. Advanced dashboards and AI analysis (narrative drafting, evaluation), then further Decision Lab work. These were deliberately deferred behind Workshop Mode.
-6. Accessibility audit (WCAG 2.2 AA) and BSA brand token substitution.
+6. Manual accessibility review (screen readers, zoom). Automated WCAG 2.2 AA checks are in place.
 
 ### Remaining work (prior plan, superseded by the revised roadmap above)
 

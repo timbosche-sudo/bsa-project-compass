@@ -110,7 +110,7 @@ function TeamSettings() {
             )
           }
         />
-        <div className="overflow-x-auto scroll-thin">
+        <div className="overflow-x-auto scroll-thin" tabIndex={0} role="region" aria-label="Table (scrolls horizontally on narrow screens)">
           <table className="table-base min-w-[620px]">
             <thead>
               <tr>

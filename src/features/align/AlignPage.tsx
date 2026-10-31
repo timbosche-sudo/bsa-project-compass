@@ -66,7 +66,7 @@ export default function AlignPage() {
               {ready.map((r) => (
                 <li key={r.label}>
                   <Link to={`${base}/${r.to}`} className="flex items-start gap-2.5 rounded-md px-2 py-2 text-[13px] hover:bg-sunken">
-                    {r.ok ? <Check className="mt-0.5 size-4 shrink-0 text-ok" aria-label="Ready" /> : <Circle className="mt-0.5 size-4 shrink-0 text-faint" aria-label="Not yet" />}
+                    {r.ok ? <Check className="mt-0.5 size-4 shrink-0 text-ok" aria-label="Ready" /> : <Circle className="mt-0.5 size-4 shrink-0 text-muted" aria-label="Not yet" />}
                     <span className="text-ink">{r.label}</span>
                   </Link>
                 </li>

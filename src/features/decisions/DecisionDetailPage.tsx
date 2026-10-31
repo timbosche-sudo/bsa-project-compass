@@ -150,7 +150,7 @@ export default function DecisionDetailPage() {
                 )
               }
             />
-            <div className="overflow-x-auto scroll-thin">
+            <div className="overflow-x-auto scroll-thin" tabIndex={0} role="region" aria-label="Table (scrolls horizontally on narrow screens)">
               <table className="table-base min-w-[860px]">
                 <thead>
                   <tr>
@@ -214,7 +214,7 @@ export default function DecisionDetailPage() {
                 )
               }
             />
-            <div className="overflow-x-auto scroll-thin">
+            <div className="overflow-x-auto scroll-thin" tabIndex={0} role="region" aria-label="Table (scrolls horizontally on narrow screens)">
               <table className="table-base min-w-[640px]">
                 <thead>
                   <tr>
@@ -291,7 +291,7 @@ export default function DecisionDetailPage() {
                 <ul className="space-y-2">
                   {alts.map((a) => (
                     <li key={a.id} className="grid grid-cols-[160px_1fr_60px] items-center gap-3 text-[13px]">
-                      <span className={cx('truncate font-medium', !ev.eligible[a.id] && 'text-faint line-through')}>{a.name}</span>
+                      <span className={cx('truncate font-medium', !ev.eligible[a.id] && 'text-muted line-through')}>{a.name}</span>
                       <span className="h-2.5 overflow-hidden rounded-full bg-surface">
                         {ev.eligible[a.id] && <span className={cx('block h-full rounded-full', ev.leaders.includes(a.id) ? 'bg-accent' : 'bg-ink-2/40')} style={{ width: `${(ev.totals[a.id] / maxTotal) * 100}%` }} />}
                       </span>
@@ -423,7 +423,7 @@ function FactorEditor({ f, decision, locked, eligible, paramount, onChange, onPa
           )}
         </div>
       </div>
-      <div className="mt-3 overflow-x-auto scroll-thin">
+      <div className="mt-3 overflow-x-auto scroll-thin" tabIndex={0} role="region" aria-label="Table (scrolls horizontally on narrow screens)">
         <table className="table-base min-w-[700px]">
           <thead>
             <tr>
@@ -439,7 +439,7 @@ function FactorEditor({ f, decision, locked, eligible, paramount, onChange, onPa
               const least = f.leastPreferredAltId === a.id
               const adv = f.advantages[a.id] ?? { description: '', importance: null }
               return (
-                <tr key={a.id} className={cx(!eligible[a.id] && 'opacity-50')}>
+                <tr key={a.id} className={cx(!eligible[a.id] && 'text-muted')}>
                   <td className="font-medium whitespace-nowrap">{a.name}</td>
                   <td>
                     <Input aria-label={`${f.name} attribute of ${a.name}`} value={f.attributes[a.id] ?? ''} disabled={locked} onChange={(e) => onChange({ attributes: { ...f.attributes, [a.id]: e.target.value } })} />
@@ -531,7 +531,7 @@ function ImportanceVsCost({ decision, totals, eligible }: { decision: Decision; 
               <div className="text-muted">
                 Importance {totals[a.id]} · Cost {money(a.cost) ?? <em>unknown</em>}
               </div>
-              {a.costBasis && <div className="text-[11.5px] text-faint">{a.costBasis}</div>}
+              {a.costBasis && <div className="text-[11.5px] text-muted">{a.costBasis}</div>}
             </li>
           ))}
           {unknown.length > 0 && known.length > 0 && <li className="text-[11.5px] text-warn">{unknown.length} alternative(s) without cost are not plotted.</li>}
@@ -557,7 +557,7 @@ function InformalScores({ decision, locked, onChange }: { decision: Decision; lo
         }
       />
       {open && (
-        <div className="overflow-x-auto px-5 py-4 scroll-thin">
+        <div className="overflow-x-auto px-5 py-4 scroll-thin" tabIndex={0} role="region" aria-label="Table (scrolls horizontally on narrow screens)">
           <table className="table-base min-w-[520px]">
             <thead>
               <tr>

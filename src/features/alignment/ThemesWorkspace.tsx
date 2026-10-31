@@ -162,7 +162,7 @@ function ThemeCard({ theme, focused, unsupported }: { theme: Theme; focused: boo
   const others = data.themes.filter((t) => t.id !== theme.id && t.status !== 'archived')
 
   return (
-    <Card className={cx(focused && 'ring-2 ring-accent', theme.status === 'archived' && 'opacity-70')} id={`theme-${theme.id}`}>
+    <Card className={cx(focused && 'ring-2 ring-accent', theme.status === 'archived' && 'opacity-80')} id={`theme-${theme.id}`}>
       <div className="border-b border-line px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -192,7 +192,7 @@ function ThemeCard({ theme, focused, unsupported }: { theme: Theme; focused: boo
             </Callout>
           </div>
         )}
-        <div className="mt-2 text-[11.5px] text-faint">
+        <div className="mt-2 text-[11.5px] text-muted">
           {statements.length} statement(s) · {ownerCount} from Owner requirements or institutional sources
         </div>
       </div>

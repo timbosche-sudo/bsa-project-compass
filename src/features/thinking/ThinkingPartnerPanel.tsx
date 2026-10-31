@@ -1,5 +1,5 @@
 import { Crosshair, Lightbulb, Lock, Search, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import { useProject } from '@/app/project'
 import { useSession } from '@/app/session'
@@ -44,7 +44,7 @@ const loadMode = (): ThinkingMode => {
  * in four modes, supports guided exploration, and keeps promising ideas on a
  * Working Canvas. It proposes; people decide.
  */
-export function ThinkingPartnerPanel({ onClose }: { onClose: () => void }) {
+export function ThinkingPartnerPanel({ onClose, focusOnOpen }: { onClose: () => void; focusOnOpen?: boolean }) {
   const { data, can, run } = useProject()
   const { adapter } = useSession()
   const notify = useToast()
@@ -61,6 +61,11 @@ export function ThinkingPartnerPanel({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState<{ added: number; suppressed: number; at: string } | null>(null)
   const [includeSetAside, setIncludeSetAside] = useState(false)
   const providers = useMemo(() => thinkingProviders(adapter), [adapter])
+  const heading = useRef<HTMLHeadingElement>(null)
+  // Move focus into the panel when it opens, so keyboard and screen-reader users land in it.
+  useEffect(() => {
+    if (focusOnOpen) heading.current?.focus()
+  }, [focusOnOpen])
   const ai = providers.ai.status()
 
   const focus = scope === 'selected' ? pageFocus : scope === 'chosen' ? chosen : null
@@ -103,7 +108,7 @@ export function ThinkingPartnerPanel({ onClose }: { onClose: () => void }) {
     <aside aria-label="Thinking Partner" className="flex h-full min-h-0 flex-col border-l border-line bg-canvas">
       <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
         <div className="min-w-0">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+          <h2 ref={heading} tabIndex={-1} className="flex items-center gap-2 text-[15px] font-semibold text-ink outline-none">
             <Lightbulb className="size-4" /> Thinking Partner
           </h2>
           <p className="text-[11.5px] text-muted">People exercise the judgment. Observations are rule-based; no AI model is used.</p>

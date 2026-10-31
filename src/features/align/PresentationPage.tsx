@@ -58,7 +58,7 @@ export default function PresentationPage() {
             {Object.entries(HEARD_SECTION_LABELS).map(([sec, label]) => {
               const xs = presentableHeard(data, sec as never)
               return (
-                <li key={sec} className={cx(!xs.length && 'opacity-50')}>
+                <li key={sec} className={cx(!xs.length && 'text-muted')}>
                   <div className="eyebrow">{label}</div>
                   <p className="text-[13px] text-ink-2">{xs.length ? xs.map((h) => h.title).join(' · ') : 'Nothing marked for the presentation — no slide.'}</p>
                 </li>

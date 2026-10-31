@@ -145,7 +145,7 @@ function Sidebar({ onClose }: { onClose: () => void }) {
           <div className="text-[10px] font-black tracking-[0.1em] text-muted uppercase">BSA Intelligence</div>
           <div className="mt-0.5 text-[17px] font-black text-ink">Project Compass</div>
         </div>
-        <button className="absolute top-4 right-3 rounded p-1 text-muted hover:bg-sunken lg:hidden" onClick={onClose} aria-label="Close navigation">
+        <button className="absolute top-4 right-3 rounded p-1.5 text-muted hover:bg-sunken lg:hidden" onClick={onClose} aria-label="Close navigation">
           <X className="size-4" />
         </button>
       </div>
@@ -203,7 +203,7 @@ function SideLink({ item, base }: { item: NavItem; base: string }) {
     >
       {item.icon}
       <span className="truncate">{item.label}</span>
-      {item.number && <span className="ml-auto font-mono text-[10.5px] opacity-50 tabular-nums">{item.number}</span>}
+      {item.number && <span className="ml-auto font-mono text-[10.5px] opacity-80 tabular-nums">{item.number}</span>}
     </NavLink>
   )
 }
@@ -332,7 +332,7 @@ function Breadcrumbs() {
           const last = i === crumbs.length - 1
           return (
             <li key={i} className={cx('flex min-w-0 items-center gap-1', i === 0 && crumbs.length > 2 && 'hidden md:flex')}>
-              {i > 0 && <ChevronRight className="size-3.5 shrink-0 text-faint" aria-hidden />}
+              {i > 0 && <ChevronRight className="size-3.5 shrink-0 text-muted" aria-hidden />}
               {c.to && !last ? (
                 <Link to={c.to} className="truncate text-muted hover:text-ink">
                   {c.label}

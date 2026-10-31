@@ -85,3 +85,18 @@ test('Develop: with nothing to say, the Thinking Partner says so', async ({ page
   await panel.getByRole('button', { name: 'Analyze' }).click()
   await expect(panel.getByRole('status')).toContainText('No significant observations identified from the available evidence.')
 })
+
+test('keyboard: opening moves focus into the panel; Esc closes it and returns focus', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(() => localStorage.clear())
+  await page.goto(`${P}/interpret/principles`)
+  const toggle = page.getByRole('button', { name: 'Thinking Partner', exact: true })
+  await toggle.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { name: 'Thinking Partner' })).toBeFocused()
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('complementary', { name: 'Thinking Partner' })).toHaveCount(0)
+  await expect(toggle).toBeFocused()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+})

@@ -58,12 +58,12 @@ export function EditableText({
     )
   return (
     <div className={cx('group flex items-start gap-2', className)}>
-      <div className="min-w-0 flex-1">{value ? (display ? display(value) : <p className="text-[13.5px] leading-relaxed whitespace-pre-line text-ink-2">{value}</p>) : <p className="text-[13px] text-faint italic">{placeholder}</p>}</div>
+      <div className="min-w-0 flex-1">{value ? (display ? display(value) : <p className="text-[13.5px] leading-relaxed whitespace-pre-line text-ink-2">{value}</p>) : <p className="text-[13px] text-muted italic">{placeholder}</p>}</div>
       {canEdit && (
         <button
           type="button"
           aria-label={`Edit ${label}`}
-          className="shrink-0 rounded p-1 text-faint hover:bg-sunken hover:text-ink"
+          className="shrink-0 rounded p-1.5 text-muted hover:bg-sunken hover:text-ink"
           onClick={() => {
             setDraft(value)
             setEditing(true)

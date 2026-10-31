@@ -101,7 +101,7 @@ function WinThemeCard({ w, onEdit }: { w: WinTheme; onEdit: () => void }) {
   const comments = data.comments.filter((c) => c.target.type === 'winTheme' && c.target.id === w.id && !c.resolved).length
   const locked = w.status === 'approved'
   return (
-    <Card className={cx(w.status === 'approved' && 'border-ok/50', w.status === 'superseded' && 'opacity-60')}>
+    <Card className={cx(w.status === 'approved' && 'border-ok/50', w.status === 'superseded' && 'opacity-80')}>
       <div className="px-5 pt-5 pb-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="code-tag">
@@ -309,10 +309,10 @@ export function Principles({ headless }: { headless?: boolean } = {}) {
                     </button>
                     {can('framework.edit') && isActive && (
                       <div className="flex flex-col justify-center pr-2">
-                        <button aria-label={`Move ${p.code} up`} className="rounded p-1 text-faint hover:bg-surface hover:text-ink" onClick={() => move(p.id, -1)}>
+                        <button aria-label={`Move ${p.code} up`} className="rounded p-1.5 text-muted hover:bg-surface hover:text-ink" onClick={() => move(p.id, -1)}>
                           <ArrowUp className="size-3.5" />
                         </button>
-                        <button aria-label={`Move ${p.code} down`} className="rounded p-1 text-faint hover:bg-surface hover:text-ink" onClick={() => move(p.id, 1)}>
+                        <button aria-label={`Move ${p.code} down`} className="rounded p-1.5 text-muted hover:bg-surface hover:text-ink" onClick={() => move(p.id, 1)}>
                           <ArrowDown className="size-3.5" />
                         </button>
                       </div>
@@ -343,7 +343,7 @@ function CoverageTable() {
   return (
     <Card>
       <CardHeader title="Evidence coverage" description="Owner = RFP, mission, regulation or stated requirement." />
-      <div className="overflow-x-auto scroll-thin">
+      <div className="overflow-x-auto scroll-thin" tabIndex={0} role="region" aria-label="Table (scrolls horizontally on narrow screens)">
       <table className="table-base">
         <thead>
           <tr>

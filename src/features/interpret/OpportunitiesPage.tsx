@@ -109,7 +109,7 @@ function OpportunityCard({ o, focused }: { o: DesignOpportunity; focused: boolea
         {edit && (
           <button
             aria-label={`Delete ${o.code}`}
-            className="ml-auto rounded p-1 text-faint hover:bg-sunken hover:text-danger"
+            className="ml-auto rounded p-1.5 text-muted hover:bg-sunken hover:text-danger"
             onClick={async () => {
               const r = await confirm({ title: `Delete ${o.code}?`, body: 'Potential outcomes linked to it are kept but lose the link.', confirmLabel: 'Delete', tone: 'danger' })
               if (r.confirmed) run({ type: 'opportunity.delete', id: o.id }, `${o.code} deleted`)

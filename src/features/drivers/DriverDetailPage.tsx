@@ -349,7 +349,7 @@ function Metric({ label, value, unit, emptyText = 'Unknown', sub }: { label: str
     <div className="bg-surface px-5 py-4">
       <div className="eyebrow">{label}</div>
       <div className="mt-1.5 text-[24px] leading-tight font-semibold tracking-tight tabular-nums">
-        {value === null || value === '' ? <span className="text-[15px] font-medium text-faint italic">{emptyText}</span> : value}
+        {value === null || value === '' ? <span className="text-[15px] font-medium text-muted italic">{emptyText}</span> : value}
       </div>
       {value && unit && <div className="mt-0.5 text-[12px] leading-snug text-muted">{unit}</div>}
       {sub && <div className="mt-0.5 text-[11.5px] text-muted">{sub}</div>}
